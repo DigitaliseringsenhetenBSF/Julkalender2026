@@ -120,6 +120,10 @@ export const boardResponse = z.object({
   snapTolerance: z.number().positive(),
   totalPieces: z.number().int().positive(),
   pieces: z.array(boardPieceSchema),
+  /** Pieces placed in this user's trays by this request, i.e. unlocked since the last visit. */
+  arrived: count,
+  /** The user had no pieces before this request. */
+  firstVisit: z.boolean(),
 });
 export type BoardResponse = z.infer<typeof boardResponse>;
 

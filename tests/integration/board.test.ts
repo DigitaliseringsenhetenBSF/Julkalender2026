@@ -65,8 +65,18 @@ describe('GET /api/board', () => {
     }
     // Balanced: one per tray.
     expect(new Set(first.pieces.map((p) => p.area)).size).toBe(2);
-    // Reload: nothing jumps.
-    expect((await getBoard(alice)).pieces).toEqual(first.pieces);
+    expect(first).toMatchObject({ arrived: 2, firstVisit: true });
+    // Reload: nothing jumps, and nothing counts as newly arrived again.
+    const second = await getBoard(alice);
+    expect(second.pieces).toEqual(first.pieces);
+    expect(second).toMatchObject({ arrived: 0, firstVisit: false });
+  });
+
+  it('reports pieces unlocked since the last visit', async () => {
+    await unlockPieces(1); // 15 completions → 1 piece
+    await getBoard(alice);
+    await unlockPieces(1); // 15 more → 2 pieces
+    expect(await getBoard(alice)).toMatchObject({ arrived: 1, firstVisit: false });
   });
 
   it('unlocks pieces in the same shared order for everyone', async () => {

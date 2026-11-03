@@ -71,13 +71,16 @@ export async function signIn(server: TestServer, index = 0): Promise<string> {
   return raw.split(';')[0] as string;
 }
 
+let extraUserCounter = 0;
+
 /** Creates extra users directly (for concurrency tests) and returns their session cookies. */
 export async function createUsers(server: TestServer, count: number): Promise<string[]> {
   const cookies: string[] = [];
   for (let i = 0; i < count; i++) {
+    const n = ++extraUserCounter;
     const [row] = await server.ctx.db.query<{ id: number }>(
       `INSERT INTO users (external_id, display_name) VALUES ($1, $2) RETURNING id`,
-      [`dev:extra-${i}`, `Extra ${i}`],
+      [`dev:extra-${n}`, `Extra ${n}`],
     );
     const response = await server.app.inject({
       method: 'POST',

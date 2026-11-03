@@ -18,12 +18,20 @@ const SELECT_BOARD = `
   FROM board_pieces b JOIN puzzle_pieces p ON p.id = b.piece_id
   WHERE b.user_id = $1`;
 
+export interface BoardState {
+  pieces: BoardPiece[];
+  /** Pieces that arrived on this user's board in this request (unlocked since last visit). */
+  arrived: number;
+  /** True when the user had no pieces before this request (first look at the puzzle). */
+  firstVisit: boolean;
+}
+
 /**
  * The user's board. Unlocked pieces without a row yet get a random tray position, which is
  * stored right away so it never jumps on reload (SPEC §5.5). ON CONFLICT covers two tabs
  * loading the board at the same moment.
  */
-export function getBoard(db: Db, userId: number, random: () => number): Promise<BoardPiece[]> {
+export function getBoard(db: Db, userId: number, random: () => number): Promise<BoardState> {
   return db.transaction(async (tx) => {
     const unlocked = await tx.query<{ id: number }>(
       `SELECT p.id::int AS id FROM puzzle_pieces p, campaign_state s
@@ -54,7 +62,12 @@ export function getBoard(db: Db, userId: number, random: () => number): Promise<
       }
     }
 
-    return tx.query<BoardPiece>(`${SELECT_BOARD} ORDER BY b.z, b.piece_id`, [userId]);
+    const pieces = await tx.query<BoardPiece>(`${SELECT_BOARD} ORDER BY b.z, b.piece_id`, [userId]);
+    return {
+      pieces,
+      arrived: pieces.length - existing.length,
+      firstVisit: existing.length === 0 && pieces.length > 0,
+    };
   });
 }
 

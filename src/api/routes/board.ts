@@ -16,11 +16,14 @@ export async function boardRoutes(app: FastifyInstance, ctx: AppContext): Promis
   // Always the caller's own board: the user id comes from the session, never the request.
   app.get('/api/board', async (request): Promise<BoardResponse> => {
     const user = currentUser(request);
+    const board = await getBoard(ctx.db, user.id, ctx.random);
     return {
       grid,
       snapTolerance: tolerance,
       totalPieces: ctx.rules.totalPieces,
-      pieces: await getBoard(ctx.db, user.id, ctx.random),
+      pieces: board.pieces,
+      arrived: board.arrived,
+      firstVisit: board.firstVisit,
     };
   });
 

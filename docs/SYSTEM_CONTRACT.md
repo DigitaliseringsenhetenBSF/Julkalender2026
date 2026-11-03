@@ -161,12 +161,18 @@ positions first.
       "isNew": true,
       "alt": "Röd stuga med tomtar och en stege mot taket"
     }
-  ]
+  ],
+  "arrived": 1,
+  "firstVisit": false
 }
 ```
 
 - `area` is one of `tray_left | tray_right | board`.
 - Coordinates follow SPEC §5.5.
+- `isNew` marks a piece the user has not moved yet (the "Ny" badge).
+- `arrived` is how many pieces this request added to the user's trays, i.e. pieces unlocked since
+  the last visit.
+- `firstVisit` is `true` when the user had no pieces before this request.
 
 ### `PUT /api/board/pieces/:id`
 

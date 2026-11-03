@@ -1,0 +1,61 @@
+/*
+ * Design tokens. PLACEHOLDER palette and fonts – replace the values with Lunds kommuns
+ * grafiska profil when the official assets are provided (docs/SPEC.md Q19). Components only
+ * use these variables, so the swap happens here.
+ * Text colours are chosen for ≥ 4.5:1 contrast on --color-surface and --color-bg.
+ */
+:root {
+  --color-bg: #f3f6f4;
+  --color-surface: #ffffff;
+  --color-surface-muted: #edf2ef;
+  --color-text: #1b2420;
+  --color-text-muted: #4a5751;
+  --color-border: #d3ddd7;
+
+  --color-primary: #1f5c45;
+  --color-primary-hover: #174a37;
+  --color-on-primary: #ffffff;
+  --color-accent: #a8322b;
+  --color-accent-soft: #fbeeed;
+  --color-success: #1d6542;
+  --color-success-soft: #e6f3ec;
+  --color-success-border: #b5d8c4;
+  --color-warning-soft: #fff4d6;
+  --color-warning-border: #ecd48a;
+  --color-warning-text: #5c4400;
+  --color-error: #a8322b;
+  --color-error-soft: #fbeeed;
+  --color-focus: #1a56c4;
+  --color-new: #d9a53b;
+
+  --color-tray: #e3eae5;
+  --color-tray-border: #b6c7bc;
+  --color-board: #d6e2d9;
+  --color-board-edge: #a6baad;
+  --color-slot-line: rgb(31 92 69 / 0.2);
+  --color-slot-target: rgb(26 86 196 / 0.14);
+  --color-locked-stripe: #e5ece7;
+
+  /* Single-series chart colour, validated (lightness, chroma, ≥ 3:1 on white). */
+  --color-chart: #1f8a5c;
+  --color-chart-hover: #2e9e6c;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 40px;
+
+  --shadow-card: 0 1px 2px rgb(16 40 30 / 0.06), 0 4px 16px rgb(16 40 30 / 0.05);
+  --shadow-piece: 0 1px 4px rgb(0 0 0 / 0.28);
+  --shadow-lift: 0 12px 28px rgb(0 0 0 / 0.3);
+
+  --page-width: 1120px;
+}

@@ -15,7 +15,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': apiTarget,
+      // Trailing slash matters: "/api" would also capture the module /api.ts.
+      '/api/': apiTarget,
       '/health': apiTarget,
     },
   },
