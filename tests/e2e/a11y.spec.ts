@@ -15,6 +15,10 @@ async function expectNoSeriousViolations(page: Page) {
   ).toEqual([]);
 }
 
+// Check the settled UI: with reduced motion the toast fade-in and door flips are instant, so axe
+// never measures contrast mid-animation (it once flaked on a half-transparent toast).
+test.use({ reducedMotion: 'reduce' });
+
 test.beforeEach(async ({ page }) => {
   await resetDatabase(page);
 });
@@ -34,7 +38,7 @@ test('calendar page has no serious accessibility violations', async ({ page }) =
 test('opened luckor have no serious accessibility violations', async ({ page }) => {
   await signIn(page);
   await page.getByRole('button', { name: 'Lucka 1 Öppna', exact: true }).click();
-  await page.getByRole('button', { name: 'Öppna dagens lucka' }).click();
+  await page.getByRole('button', { name: /^Lucka 10 / }).click();
   await expect(page.locator('.lucka--opened')).toHaveCount(2);
   await expectNoSeriousViolations(page);
 });

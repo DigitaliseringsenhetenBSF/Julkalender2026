@@ -5,9 +5,6 @@ import { DevSignIn } from './components/DevSignIn.tsx';
 import { Header } from './components/Header.tsx';
 import { Intro } from './components/Intro.tsx';
 import { MissionGrid } from './components/MissionGrid.tsx';
-import { ProgressPanel } from './components/ProgressPanel.tsx';
-import { Stats } from './components/Stats.tsx';
-import { TodayCard } from './components/TodayCard.tsx';
 import { Puzzle } from './puzzle/Puzzle.tsx';
 import { errorMessage, sv } from './texts.sv.ts';
 import { useCampaign } from './useCampaign.ts';
@@ -135,15 +132,6 @@ function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLo
           </p>
         )}
         <Intro calendar={calendar} completionsPerPiece={progress.completionsPerPiece} />
-        <div className="top-row">
-          <TodayCard
-            calendar={calendar}
-            busyDay={busyDay}
-            onToggle={(d, c) => void toggle(d, c)}
-            onOpen={(d) => void open(d)}
-          />
-          <ProgressPanel progress={progress} />
-        </div>
         <Puzzle
           unlockedPieces={progress.unlockedPieces}
           completionsPerPiece={progress.completionsPerPiece}
@@ -158,14 +146,15 @@ function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLo
           onToggle={(d, c) => void toggle(d, c)}
           onOpen={(d) => void open(d)}
         />
-        <Stats progress={progress} />
       </main>
+      {/* Kept as a discreet link: users must be told how their data is handled (GDPR art. 13). */}
       <footer className="site-footer">
-        <h2>{sv.privacy.heading}</h2>
-        {sv.privacy.paragraphs.map((p) => (
-          <p key={p}>{p}</p>
-        ))}
-        <p className="muted">{sv.privacy.footer}</p>
+        <details>
+          <summary>{sv.privacy.heading}</summary>
+          {sv.privacy.paragraphs.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </details>
       </footer>
       <div className="visually-hidden" aria-live="polite" aria-atomic="true">
         {announcement}

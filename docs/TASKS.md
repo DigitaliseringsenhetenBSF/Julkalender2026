@@ -69,6 +69,10 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
 - [x] **Per-uppdrag count** on each opened lucka ("Du och 6 kollegor har gjort uppdraget"). The
       per-lucka chart is removed from Statistik.
 
+- [x] **Cleaner page.** The "Dagens uppdrag", "Tillsammans" and Statistik cards are removed;
+      "Om dina uppgifter" is a small expandable footer link. Today's lucka is ticked off in the
+      grid.
+
 ## Later phases (need decisions or material)
 
 - [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in

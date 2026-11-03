@@ -112,7 +112,7 @@ sequenceDiagram
   participant D as Domain
   participant DB as PostgreSQL
 
-  U->>W: "Jag har gjort det!" (lucka d)
+  U->>W: ticks "Gjort" in lucka d
   W->>A: POST /api/completions {day: d}
   A->>D: missionStatus(d, today(Europe/Stockholm))
   alt lucka not open / campaign closed

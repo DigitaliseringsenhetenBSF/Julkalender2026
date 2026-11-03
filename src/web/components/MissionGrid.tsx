@@ -35,7 +35,13 @@ export function MissionGrid({ calendar, busyDay, onToggle, onOpen }: MissionGrid
   return (
     <section className="card missions" aria-labelledby="missions-heading">
       <h2 id="missions-heading">{sv.missions.heading}</h2>
-      <p className="lead">{sv.missions.lead}</p>
+      <p className="lead">
+        {calendar.phase === 'before'
+          ? sv.missions.leadBefore(calendar.firstMissionDate)
+          : calendar.phase === 'closed'
+            ? sv.missions.leadClosed
+            : sv.missions.lead}
+      </p>
       <ol className="luckor">
         {calendar.missions.map((mission) => (
           <Lucka

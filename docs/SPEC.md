@@ -29,13 +29,12 @@ Product thesis: small individual actions become meaningful when they visibly add
 
 1. **First visit:**
    - The user opens the link from Teams or e-mail and signs in.
-   - They see a short "Så funkar det" explanation, today's uppdrag, the puzzle and the shared
-     progress.
+   - They see a short "Så funkar det" explanation, the puzzle and the 24 luckor. Today's lucka
+     is marked "Idag".
 2. **Daily tick-off:**
-   - The user opens ("vänder") today's lucka, either in the "Dagens uppdrag" card or in the
-     lucka grid. A door turns over and reveals the uppdrag, and it stays open from then on.
-   - The user presses "Jag har gjort det!" (or ticks "Gjort" in the lucka) and the counter
-     updates.
+   - The user opens ("vänder") today's lucka in the lucka grid. The door turns over and reveals
+     the uppdrag, and it stays open from then on.
+   - The user ticks "Gjort" in the lucka.
    - Each opened lucka shows how many colleagues have done that uppdrag.
    - If the total crosses a multiple of 15, a new pusselbit appears in a tray with a short,
      non-intrusive message.
@@ -48,8 +47,8 @@ Product thesis: small individual actions become meaningful when they visibly add
    - Every move is saved automatically.
 5. **New pieces after absence:** Pieces unlocked by colleagues appear in the trays at stored
    random positions, marked "Ny".
-6. **Statistics:** The user sees "Mina uppdrag: 9 av 14 möjliga", the collective totals and bars per
-   lucka.
+6. **Statistics:** Each opened lucka shows how many colleagues have done that uppdrag. The page
+   shows no other statistics, by design, to keep it clean (decided 2026-11-03).
 7. **Admin:** Deferred (see §13). Until then, mission texts are edited in `content/missions.json`
    and loaded with `npm run db:seed`.
 
@@ -191,8 +190,16 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
 | Deltagare                 | `count(distinct user_id)` in completions                                                                                                                                            |
 | Per uppdrag               | `count(completions)` for that mission. Shown on each opened lucka as "Du och 6 kollegor har gjort uppdraget" or "7 kollegor har gjort uppdraget" (the user excluded from "others"). |
 
-There is no separate per-lucka chart: since 2026-11-03 the per-uppdrag count is shown on each
-lucka instead.
+**What the UI shows:** Since 2026-11-03 only the per-uppdrag count is displayed, on each opened
+lucka. The rest stays in `GET /api/progress` for a future admin view:
+
+- the "Dagens uppdrag" card;
+- the "Tillsammans" progress card ("N uppdrag kvar till nästa pusselbit");
+- the Statistik card (Mina uppdrag, Tillsammans, Pusselbitar, Deltagare);
+- the per-lucka chart.
+
+The collective progress now shows only through the puzzle itself and the "En ny pusselbit har
+låsts upp!" message.
 
 No per-person data about anyone else is ever shown, only counts. There is no leaderboard.
 
@@ -266,8 +273,9 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
   Without `--confirm` it is a dry run. It must not be run in a shared environment without explicit
   approval.
 
-- An information text ("Om dina uppgifter") is shown in the app footer. Wording to be approved
-  (Q16).
+- An information text ("Om dina uppgifter") is shown as a discreet expandable link in the app
+  footer. It was kept when the page was simplified, because users must be informed (GDPR art. 13).
+  Wording to be approved (Q16).
 
 ## 10. Accessibility (WCAG 2.1 AA, DOS-lagen)
 
@@ -312,8 +320,8 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 - database;
 - API;
 - dev sign-in;
-- the full staff UI (today card, progress, puzzle with drag and keyboard, lucka grid,
-  statistics);
+- the staff UI (intro, puzzle with drag and keyboard, lucka grid with doors and per-uppdrag
+  counts);
 - date simulation;
 - tests;
 - deploy files.
@@ -364,6 +372,7 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces                                                      | Owner answers                                           | –                                                  |
 | 2026-11-03 | Piece images gated by unlock; facit never served                                                                         | Keep the picture a surprise                             | Serve all statically                               |
 | 2026-11-03 | Luckor are doors that turn over and stay open (server-stored); per-uppdrag counts on each lucka; per-lucka chart removed | Campaign owner's request                                | Plain list with checkboxes; client-only open state |
+| 2026-11-03 | Clean page: remove the "Dagens uppdrag", "Tillsammans" and Statistik cards; privacy text becomes a discreet footer link  | Campaign owner wants a stilren service                  | Keep the cards                                     |
 | 2026-11-03 | Snapped pieces lock                                                                                                      | Prevents accidental moves; simpler keyboard model       | Movable after snap                                 |
 
 ## 16. Engineering conventions (the six core areas)

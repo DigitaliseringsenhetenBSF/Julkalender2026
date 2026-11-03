@@ -68,35 +68,6 @@ export const sv = {
     ],
   },
 
-  today: {
-    heading: 'Dagens uppdrag',
-    lucka: (day: number, date: string) => `Lucka ${day} · ${formatDate(date)}`,
-    closedDoor: (day: number) => `Dagens lucka är nummer ${day}. Vänd den för att se uppdraget!`,
-    openToday: 'Öppna dagens lucka',
-    before: (date: string) => `Kalendern öppnar ${formatDate(date)}. Välkommen tillbaka då!`,
-    daysLeft: (n: number) => plural(n, 'En dag kvar.', `${n} dagar kvar.`),
-    catchUp: (date: string) =>
-      `Alla luckor är öppna. Du kan bocka av missade uppdrag till och med ${formatDate(date)}.`,
-    leftToDo: (n: number) =>
-      n === 0
-        ? 'Du har gjort alla uppdrag – tack!'
-        : `Du har ${n} ${plural(n, 'uppdrag', 'uppdrag')} kvar att bocka av.`,
-    closed: 'Kalendern är stängd. Tack för att du var med och gjorde skillnad!',
-    doIt: 'Jag har gjort det!',
-    done: 'Avklarat – bra jobbat!',
-    undo: 'Ångra',
-    undoLabel: (day: number) => `Ångra avbockningen av uppdrag ${day}`,
-  },
-
-  progress: {
-    heading: 'Tillsammans',
-    total: (n: number) => `Tillsammans har vi klarat ${n} uppdrag`,
-    remaining: (n: number) => `${n} uppdrag kvar till nästa pusselbit`,
-    allUnlocked: 'Alla pusselbitar är upplåsta!',
-    pieces: (unlocked: number, total: number) => `${unlocked} av ${total} pusselbitar upplåsta`,
-    barLabel: 'Framsteg mot nästa pusselbit',
-  },
-
   puzzle: {
     heading: 'Pusslet',
     lead: 'Dra bitarna från lådorna till rätt plats på bordet. Du kan också välja en bit och sedan en ruta – med mus, finger eller tangentbord.',
@@ -149,6 +120,10 @@ export const sv = {
   missions: {
     heading: 'Alla luckor',
     lead: 'Öppna luckorna och bocka av uppdragen du har gjort – även från tidigare dagar.',
+    leadBefore: (date: string) =>
+      `Kalendern öppnar ${formatDate(date)}. Då kan du öppna den första luckan.`,
+    leadClosed:
+      'Kalendern är stängd för avbockningar. Tack för att du var med och gjorde skillnad!',
     locked: (date: string) => `Öppnas ${formatDate(date)}`,
     today: 'Idag',
     open: 'Öppna',
@@ -170,17 +145,6 @@ export const sv = {
     },
   },
 
-  stats: {
-    heading: 'Statistik',
-    mine: 'Mina uppdrag',
-    mineValue: (completed: number, possible: number) => `${completed} av ${possible} möjliga`,
-    together: 'Skolkontoret tillsammans',
-    togetherValue: (n: number) => `${n} uppdrag`,
-    pieces: 'Pusselbitar',
-    piecesValue: (unlocked: number, total: number) => `${unlocked} av ${total}`,
-    participants: 'Deltagare',
-  },
-
   celebrate: {
     pieceUnlocked: 'Ditt uppdrag låste upp en ny pusselbit!',
   },
@@ -200,7 +164,6 @@ export const sv = {
       'Ingen annan kan se dina uppgifter. Andra ser bara summan för hela Skolkontoret.',
       'Uppgifterna raderas efter kampanjen, senast 31 januari 2027.',
     ],
-    footer: 'Miljöjulkalendern · Skolkontoret, Barn- och skolförvaltningen, Lunds kommun',
   },
 };
 

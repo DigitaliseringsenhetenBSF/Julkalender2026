@@ -16,17 +16,16 @@ test('tick off → new piece → drag to board → reload → still placed', asy
   await signIn(page);
 
   await expect(page.getByText('Testläge: kalendern visar 10 december som idag.')).toBeVisible();
-  await expect(page.getByText('Tillsammans har vi klarat 59 uppdrag')).toBeVisible();
   await expect(loosePieces(page)).toHaveCount(3);
 
-  // Today's lucka is a closed door until it is turned over.
-  await page.getByRole('button', { name: 'Öppna dagens lucka' }).click();
-  await expect(page.getByRole('heading', { name: 'Uppdrag 10' }).first()).toBeVisible();
+  // Today's lucka (10) is a closed door until it is turned over.
+  await page.getByRole('button', { name: /^Lucka 10 / }).click();
+  const today = page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 10' });
+  await expect(today.getByRole('heading', { name: 'Lucka 10: Uppdrag 10' })).toBeVisible();
 
   // Ticking off today's uppdrag is the 60th completion and unlocks piece number 4.
-  await page.getByRole('button', { name: 'Jag har gjort det!' }).click();
-  await expect(page.getByText('Tillsammans har vi klarat 60 uppdrag')).toBeVisible();
-  await expect(page.getByText('Avklarat – bra jobbat!')).toBeVisible();
+  await today.getByRole('checkbox').check();
+  await expect(today).toContainText(/Du och \d+ kollegor har gjort uppdraget/);
   await expect(page.locator('.toast')).toContainText('Ditt uppdrag låste upp en ny pusselbit!');
   await expect(loosePieces(page)).toHaveCount(4);
 
@@ -77,7 +76,9 @@ test('keyboard only: pick a piece, choose its slot, tick off a lucka', async ({ 
   await checkbox.focus();
   await page.keyboard.press('Space');
   await expect(checkbox).toBeChecked();
-  await expect(page.getByText('Tillsammans har vi klarat 60 uppdrag')).toBeVisible();
+  await expect(page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 3' })).toContainText(
+    'Du och',
+  );
 });
 
 test('a wrong slot keeps the piece selected and Escape cancels', async ({ page }) => {
