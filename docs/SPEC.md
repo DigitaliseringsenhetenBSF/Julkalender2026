@@ -200,6 +200,13 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Generated:** `dist/` (frontend bundle and compiled server), the HTTP responses' derived
   statistics, and `campaign_summary`.
 
+**Applying content:**
+
+- Every server start runs migrations and then the idempotent content seed
+  (`src/api/bootstrap.ts`), so a deploy with edited `content/missions.json` updates the texts.
+- When the admin UI exists, the seed must switch to "insert missing only" so that admin edits are
+  not overwritten.
+
 ## 8. Identity and access
 
 - **Current (temporary): `AUTH_MODE=dev`.**
@@ -334,3 +341,69 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces                            | Owner answers                                           | –                                     |
 | 2026-11-03 | Piece images gated by unlock; facit never served                                               | Keep the picture a surprise                             | Serve all statically                  |
 | 2026-11-03 | Snapped pieces lock                                                                            | Prevents accidental moves; simpler keyboard model       | Movable after snap                    |
+
+## 16. Engineering conventions (the six core areas)
+
+### 16.1 Commands
+
+The full table is in [README.md](../README.md#commands).
+
+| Area            | Commands                                                                |
+| --------------- | ----------------------------------------------------------------------- |
+| Install / run   | `npm ci`, `npm run dev`                                                 |
+| Date simulation | `FAKE_TODAY=2026-12-10 npm run dev`. Refused when `APP_ENV=production`. |
+| Database        | `npm run db:migrate`, `npm run db:seed`, `npm run db:seed:demo`         |
+| Quality gate    | `npm run check` (lint, type check, unit and integration tests)          |
+| E2E             | `npm run test:e2e`                                                      |
+| Build and run   | `npm run build`, `npm start`                                            |
+| Operations      | `npm run smoke -- <url>`, `npm run gdpr:purge -- --confirm`             |
+| Deploy          | `render.yaml` (Render Blueprint, staging)                               |
+
+### 16.2 Testing
+
+Strategy and status are in [TECHNICAL_PLAN.md](TECHNICAL_PLAN.md#test-approach).
+
+"Done" means:
+
+- `npm run check` is green;
+- `npm run test:e2e` is green in Chromium desktop and WebKit phone, with axe reporting zero
+  serious or critical issues;
+- `npm run smoke` passes against staging.
+
+### 16.3 Project structure
+
+See [ARCHITECTURE.md](ARCHITECTURE.md#layers-and-folders).
+
+- `src/domain` is pure and has no framework or database imports.
+- `content/` holds data, not code.
+- `assets/puzzle` holds the provided images.
+
+### 16.4 Code style
+
+- TypeScript strict, ESM, Prettier and ESLint.
+- No magic numbers: rules come from `content/*.json`. Named constants (`DRAG_THRESHOLD_PX`,
+  `DEMO_COMPLETIONS`, `REFRESH_INTERVAL_MS`) carry a comment.
+- Input is validated with zod at the API boundary, and the client parses responses with the same
+  schemas.
+- All Swedish UI text lives in `src/web/texts.sv.ts`. Code and docs are in English.
+- Secrets only come from environment variables. `.env.example` documents every variable.
+
+### 16.5 Git workflow
+
+- **Branches:** `main` (deployable), plus `feat/…`, `fix/…` and `docs/…`.
+- **Commits:** conventional commits.
+- **Before every commit:** run `npm run check`.
+- **SPEC.md:** update it in the same change as any rule, data-model or architecture change.
+
+### 16.6 Boundaries
+
+The three tiers (always / ask first / never) from the project brief apply unchanged.
+
+**Ask first:**
+
+- schema changes after real users exist;
+- auth or deploy changes;
+- game-rule changes;
+- any purge in a shared environment;
+- creating the GitHub repository or Render services;
+- using images, fonts or logos not provided by the campaign owner.

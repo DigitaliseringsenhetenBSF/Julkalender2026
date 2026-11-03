@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.build.json",
     "check": "npm run lint && npm run typecheck && npm test",
     "build": "vite build && tsc -p tsconfig.build.json",
     "start": "node dist/src/api/main.js",
