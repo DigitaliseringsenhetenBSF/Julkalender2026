@@ -1,0 +1,8 @@
+{
+  "$comment": "Campaign rules. See docs/SPEC.md §5. Changing these after launch is a game-rule change – ask first.",
+  "timezone": "Europe/Stockholm",
+  "firstMissionDate": "2026-12-01",
+  "totalMissions": 24,
+  "lastTickOffDate": "2027-01-10",
+  "completionsPerPiece": 15
+}

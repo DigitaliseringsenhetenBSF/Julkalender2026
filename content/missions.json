@@ -1,0 +1,125 @@
+{
+  "$comment": "Source of truth for mission texts until the admin UI exists. `npm run db:seed` upserts these into the database.",
+  "missions": [
+    {
+      "day": 1,
+      "title": "Uppdrag 1",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 2,
+      "title": "Uppdrag 2",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 3,
+      "title": "Uppdrag 3",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 4,
+      "title": "Uppdrag 4",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 5,
+      "title": "Uppdrag 5",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 6,
+      "title": "Uppdrag 6",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 7,
+      "title": "Uppdrag 7",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 8,
+      "title": "Uppdrag 8",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 9,
+      "title": "Uppdrag 9",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 10,
+      "title": "Uppdrag 10",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 11,
+      "title": "Uppdrag 11",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 12,
+      "title": "Uppdrag 12",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 13,
+      "title": "Uppdrag 13",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 14,
+      "title": "Uppdrag 14",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 15,
+      "title": "Uppdrag 15",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 16,
+      "title": "Uppdrag 16",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 17,
+      "title": "Uppdrag 17",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 18,
+      "title": "Uppdrag 18",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 19,
+      "title": "Uppdrag 19",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 20,
+      "title": "Uppdrag 20",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 21,
+      "title": "Uppdrag 21",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 22,
+      "title": "Uppdrag 22",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 23,
+      "title": "Uppdrag 23",
+      "description": "Uppdraget presenteras snart."
+    },
+    {
+      "day": 24,
+      "title": "Uppdrag 24",
+      "description": "Uppdraget presenteras snart."
+    }
+  ]
+}

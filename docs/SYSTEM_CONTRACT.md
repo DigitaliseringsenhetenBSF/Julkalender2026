@@ -1,0 +1,202 @@
+# SYSTEM CONTRACT – Miljöjulkalendern API
+
+The machine-checked version of this contract is [`src/shared/contract.ts`](../src/shared/contract.ts)
+(zod schemas). The client parses every response with these schemas, and the integration tests
+assert every response against them, so drift fails the tests. Keep this document and the schemas
+in sync.
+
+## Conventions
+
+- JSON in and out. Mutating requests must send `Content-Type: application/json`.
+- Session: signed, httpOnly cookie `mjk_session` (`SameSite=Lax`; `Secure` outside development and
+  test).
+- Errors always have this shape:
+
+  ```json
+  { "error": { "code": "MISSION_LOCKED", "message": "Human-readable (English) explanation" } }
+  ```
+
+- Dates are ISO calendar dates (`YYYY-MM-DD`) in Europe/Stockholm unless stated otherwise.
+
+## Error codes
+
+| HTTP | code               | When                                                                |
+| ---- | ------------------ | ------------------------------------------------------------------- |
+| 400  | `VALIDATION_ERROR` | Body or params fail the schema                                      |
+| 401  | `UNAUTHENTICATED`  | No or invalid session                                               |
+| 403  | `FORBIDDEN`        | Authenticated but lacks role (admin routes, future)                 |
+| 404  | `NOT_FOUND`        | Unknown route/resource, piece not (yet) unlocked, dev-auth disabled |
+| 409  | `MISSION_LOCKED`   | Tick-off/un-tick of a lucka that is not open yet                    |
+| 409  | `CAMPAIGN_CLOSED`  | Tick-off/un-tick after `lastTickOffDate`                            |
+| 409  | `PIECE_LOCKED`     | Moving a piece that is already correctly placed                     |
+| 500  | `INTERNAL_ERROR`   | Unexpected server error (details only in server logs)               |
+
+## Endpoints
+
+### `GET /health` (no auth)
+
+`200 { "status": "ok" }` when the database answers, otherwise `503 { "status": "error" }`.
+
+### `GET /api/me`
+
+`200`:
+
+```json
+{ "user": { "id": 1, "displayName": "Testanvändare 1", "role": "user" }, "authMode": "dev" }
+```
+
+### Dev sign-in (only when `AUTH_MODE=dev` and `APP_ENV != production`; otherwise `404`)
+
+- `GET /api/dev-auth/users` → `200 { "users": [{ "id", "displayName", "role" }] }`
+- `POST /api/dev-auth/login` with body `{ "userId": 1 }` → `200 { "user": {…} }`, plus
+  `Set-Cookie`. Returns `404` for an unknown user.
+
+### `POST /api/auth/logout`
+
+`204`. Clears the session cookie. Does not require a session.
+
+### `GET /api/calendar`
+
+```json
+{
+  "today": "2026-12-10",
+  "simulated": false,
+  "phase": "active",
+  "firstMissionDate": "2026-12-01",
+  "lastTickOffDate": "2027-01-10",
+  "totalMissions": 24,
+  "missions": [
+    {
+      "day": 1,
+      "opensOn": "2026-12-01",
+      "status": "open",
+      "title": "Uppdrag 1",
+      "description": "…",
+      "completed": true
+    },
+    {
+      "day": 10,
+      "opensOn": "2026-12-10",
+      "status": "today",
+      "title": "Uppdrag 10",
+      "description": "…",
+      "completed": false
+    },
+    {
+      "day": 11,
+      "opensOn": "2026-12-11",
+      "status": "locked",
+      "title": null,
+      "description": null,
+      "completed": false
+    }
+  ]
+}
+```
+
+- `phase` is one of `before | active | catch_up | closed`.
+- `status` is one of `locked | open | today`.
+- Locked luckor always have `title = null` and `description = null`.
+
+### `GET /api/progress`
+
+```json
+{
+  "totalCompletions": 137,
+  "unlockedPieces": 9,
+  "totalPieces": 24,
+  "completionsPerPiece": 15,
+  "remainingToNextPiece": 13,
+  "participants": 31,
+  "perDay": [{ "day": 1, "completions": 25 }],
+  "mine": { "completed": 9, "possible": 10 }
+}
+```
+
+`perDay` lists open luckor only, in day order.
+
+### `POST /api/completions`
+
+Body: `{ "day": 1..24 }`. Idempotent.
+
+`200`:
+
+```json
+{ "day": 3, "completed": true, "newlyUnlockedPieces": 1, "progress": { …Progress } }
+```
+
+`newlyUnlockedPieces` is the number of pieces this request unlocked (0 when it was already
+completed). Errors: `400`, `401`, `409 MISSION_LOCKED`, `409 CAMPAIGN_CLOSED`.
+
+### `DELETE /api/completions/:day`
+
+Idempotent un-tick.
+
+`200`:
+
+```json
+{ "day": 3, "completed": false, "newlyUnlockedPieces": 0, "progress": { … } }
+```
+
+Unlocked pieces never decrease. Errors are the same as for `POST`.
+
+### `GET /api/board`
+
+Returns the caller's own board only. Missing rows for unlocked pieces are created at random tray
+positions first.
+
+```json
+{
+  "grid": { "columns": 6, "rows": 4 },
+  "snapTolerance": 0.35,
+  "totalPieces": 24,
+  "pieces": [
+    {
+      "id": 7,
+      "area": "tray_left",
+      "x": 0.42,
+      "y": 0.13,
+      "z": 3,
+      "placed": false,
+      "isNew": true,
+      "alt": "Röd stuga med tomtar och en stege mot taket"
+    }
+  ]
+}
+```
+
+- `area` is one of `tray_left | tray_right | board`.
+- Coordinates follow SPEC §5.5.
+
+### `PUT /api/board/pieces/:id`
+
+Body: `{ "area": "board", "x": 0.33, "y": 0.25 }`.
+
+The server clamps the position, applies the snap rule, clears `isNew` and moves the piece to the
+top of the stack.
+
+`200 { "piece": BoardPiece }`. Errors: `400`, `401`, `404` (piece unknown or not unlocked),
+`409 PIECE_LOCKED`.
+
+### `GET /api/pieces/:id/image`
+
+- `200 image/png` (`Cache-Control: private, max-age=31536000, immutable`) if the piece is
+  collectively unlocked.
+- Otherwise `404`.
+
+### Test only: `POST /api/test/reset` (registered only when `APP_ENV=test`)
+
+`204`. Resets the database to seed and demo state for e2e tests.
+
+## Invariants
+
+1. **The server decides "today"** in Europe/Stockholm. Client clocks are ignored.
+2. **One completion per (user, uppdrag)** (primary key). Retries never double-count.
+3. **`totalCompletions` is `count(*)`** of the completions table.
+4. **`unlockedPieces` is monotonic:** `GREATEST(stored, min(floor(total / 15), 24))`, updated in
+   the completion transaction under a row lock.
+5. **The unlock order is fixed** by `puzzle_pieces.unlock_rank` and is the same for everyone.
+6. **Board state is per user.** There is no endpoint that accepts another user's ID.
+7. **Locked luckor never expose content**, and locked pieces never expose images or alt texts.
+8. **Date simulation and dev sign-in cannot be enabled when `APP_ENV=production`**: the server
+   refuses to start.
