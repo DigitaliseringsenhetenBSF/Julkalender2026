@@ -56,8 +56,18 @@ export const missionSchema = z.object({
   title: z.string().nullable(),
   description: z.string().nullable(),
   completed: z.boolean(),
+  /** The user has opened ("vänt") this lucka; a completed lucka always counts as opened. */
+  opened: z.boolean(),
+  /** How many people (including the user) have completed this uppdrag; 0 while locked. */
+  completions: count,
 });
 export type ApiMission = z.infer<typeof missionSchema>;
+
+export const openingRequest = z.object({ day: z.number().int().positive() });
+export const openingResponse = z.object({
+  day: z.number().int().positive(),
+  opened: z.literal(true),
+});
 
 export const calendarResponse = z.object({
   today: isoDate,

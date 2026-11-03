@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApiProgress, CalendarResponse, CompletionResponse } from '../shared/contract.ts';
+import type {
+  ApiMission,
+  ApiProgress,
+  CalendarResponse,
+  CompletionResponse,
+} from '../shared/contract.ts';
 import { ApiCallError, api } from './api.ts';
 
 /** How often the shared counter is refreshed while the tab is visible. */
@@ -11,6 +16,10 @@ const REFRESH_INTERVAL_MS = 60_000;
  */
 export function useCampaign(onSessionLost: () => void) {
   const [calendar, setCalendar] = useState<CalendarResponse | null>(null);
+  const calendarRef = useRef(calendar);
+  useEffect(() => {
+    calendarRef.current = calendar;
+  });
   const [progress, setProgress] = useState<ApiProgress | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   // While a tick-off is in flight, a background refresh must not overwrite the optimistic UI.
@@ -48,32 +57,69 @@ export function useCampaign(onSessionLost: () => void) {
     };
   }, [load]);
 
+  const updateMission = useCallback((day: number, change: Partial<ApiMission>) => {
+    setCalendar(
+      (prev) =>
+        prev && {
+          ...prev,
+          missions: prev.missions.map((m) => (m.day === day ? { ...m, ...change } : m)),
+        },
+    );
+  }, []);
+
   const setCompletion = useCallback(
     async (day: number, completed: boolean): Promise<CompletionResponse> => {
-      const mark = (value: boolean) =>
+      const before = calendarRef.current?.missions.find((m) => m.day === day);
+      mutations.current++;
+      // Optimistic: tick the box and adjust "how many have done it" by one.
+      updateMission(day, {
+        completed,
+        opened: true,
+        completions: Math.max(0, (before?.completions ?? 0) + (completed ? 1 : -1)),
+      });
+      try {
+        const result = completed ? await api.tick(day) : await api.untick(day);
+        setProgress(result.progress);
+        // The server's per-lucka counts include colleagues' tick-offs since the last refresh.
         setCalendar(
           (prev) =>
             prev && {
               ...prev,
-              missions: prev.missions.map((m) => (m.day === day ? { ...m, completed: value } : m)),
+              missions: prev.missions.map((m) => {
+                const fresh = result.progress.perDay.find((d) => d.day === m.day);
+                return fresh ? { ...m, completions: fresh.completions } : m;
+              }),
             },
         );
-      mutations.current++;
-      mark(completed);
-      try {
-        const result = completed ? await api.tick(day) : await api.untick(day);
-        setProgress(result.progress);
         return result;
       } catch (error) {
-        mark(!completed);
+        if (before) updateMission(day, before);
         if (error instanceof ApiCallError && error.status === 401) sessionLost.current();
         throw error;
       } finally {
         mutations.current--;
       }
     },
-    [],
+    [updateMission],
   );
 
-  return { calendar, progress, loadFailed, reload: load, setCompletion };
+  /** Opens ("vänder") a lucka; it stays open for good. */
+  const openLucka = useCallback(
+    async (day: number): Promise<void> => {
+      mutations.current++;
+      updateMission(day, { opened: true });
+      try {
+        await api.openLucka(day);
+      } catch (error) {
+        updateMission(day, { opened: false });
+        if (error instanceof ApiCallError && error.status === 401) sessionLost.current();
+        throw error;
+      } finally {
+        mutations.current--;
+      }
+    },
+    [updateMission],
+  );
+
+  return { calendar, progress, loadFailed, reload: load, setCompletion, openLucka };
 }

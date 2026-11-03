@@ -53,7 +53,7 @@ export function App() {
 const TOAST_MS = 5000;
 
 function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLost: () => void }) {
-  const { calendar, progress, loadFailed, reload, setCompletion } = useCampaign(
+  const { calendar, progress, loadFailed, reload, setCompletion, openLucka } = useCampaign(
     props.onSessionLost,
   );
   const [announcement, setAnnouncement] = useState('');
@@ -94,6 +94,15 @@ function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLo
     }
   }
 
+  async function open(day: number) {
+    setErrorText(null);
+    try {
+      await openLucka(day);
+    } catch (error) {
+      setErrorText(errorMessage(error instanceof ApiCallError ? error.code : 'generic'));
+    }
+  }
+
   if (!calendar || !progress) {
     return loadFailed ? (
       <main id="main" className="page-status">
@@ -125,9 +134,14 @@ function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLo
             {errorText}
           </p>
         )}
-        <Intro completionsPerPiece={progress.completionsPerPiece} />
+        <Intro calendar={calendar} completionsPerPiece={progress.completionsPerPiece} />
         <div className="top-row">
-          <TodayCard calendar={calendar} busyDay={busyDay} onToggle={(d, c) => void toggle(d, c)} />
+          <TodayCard
+            calendar={calendar}
+            busyDay={busyDay}
+            onToggle={(d, c) => void toggle(d, c)}
+            onOpen={(d) => void open(d)}
+          />
           <ProgressPanel progress={progress} />
         </div>
         <Puzzle
@@ -138,7 +152,12 @@ function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLo
           toast={toast}
           onSessionLost={props.onSessionLost}
         />
-        <MissionGrid calendar={calendar} busyDay={busyDay} onToggle={(d, c) => void toggle(d, c)} />
+        <MissionGrid
+          calendar={calendar}
+          busyDay={busyDay}
+          onToggle={(d, c) => void toggle(d, c)}
+          onOpen={(d) => void open(d)}
+        />
         <Stats progress={progress} />
       </main>
       <footer className="site-footer">

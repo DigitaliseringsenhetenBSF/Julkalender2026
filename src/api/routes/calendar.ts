@@ -2,19 +2,21 @@ import type { FastifyInstance } from 'fastify';
 import {
   campaignPhase,
   canChangeCompletion,
+  isMissionOpen,
   localDateInZone,
   missionOpenDate,
   missionStatus,
   openMissionCount,
 } from '../../domain/calendar.ts';
 import { setCompletion } from '../../data/completions.ts';
-import { findMissionIdByDay, listCompletedDays, listMissions } from '../../data/missions.ts';
+import { findMissionIdByDay, listMissionsForUser, openLucka } from '../../data/missions.ts';
 import { getProgress } from '../../data/progress.ts';
 import {
   type CalendarResponse,
   type CompletionResponse,
   completionRequest,
   dayParams,
+  openingRequest,
 } from '../../shared/contract.ts';
 import { currentUser } from '../auth/session.ts';
 import type { AppContext } from '../context.ts';
@@ -29,10 +31,7 @@ export async function calendarRoutes(app: FastifyInstance, ctx: AppContext): Pro
   app.get('/api/calendar', async (request): Promise<CalendarResponse> => {
     const user = currentUser(request);
     const today = campaignToday(ctx);
-    const [missions, completed] = await Promise.all([
-      listMissions(ctx.db),
-      listCompletedDays(ctx.db, user.id),
-    ]);
+    const missions = await listMissionsForUser(ctx.db, user.id);
     return {
       today,
       simulated: ctx.clock.simulated,
@@ -50,7 +49,10 @@ export async function calendarRoutes(app: FastifyInstance, ctx: AppContext): Pro
           // Locked luckor never reveal their content (SPEC §5.1).
           title: locked ? null : m.title,
           description: locked ? null : m.description,
-          completed: completed.has(m.day),
+          completed: m.completed,
+          // Ticking off a lucka implies it was opened (SPEC §5.2).
+          opened: !locked && (m.opened || m.completed),
+          completions: locked ? 0 : m.completions,
         };
       }),
     };
@@ -60,6 +62,23 @@ export async function calendarRoutes(app: FastifyInstance, ctx: AppContext): Pro
     const user = currentUser(request);
     const open = openMissionCount(campaignToday(ctx), ctx.calendar);
     return getProgress(ctx.db, user.id, open, ctx.rules);
+  });
+
+  // Opening ("vända") a lucka: allowed once its date has come, also after the close date so
+  // late visitors can still read the uppdrag. It stays open for good.
+  app.post('/api/openings', async (request) => {
+    const user = currentUser(request);
+    const { day } = parseInput(openingRequest, request.body);
+    if (day > ctx.calendar.totalMissions) {
+      throw new ApiError(400, 'VALIDATION_ERROR', `day must be 1–${ctx.calendar.totalMissions}`);
+    }
+    if (!isMissionOpen(day, campaignToday(ctx), ctx.calendar)) {
+      throw new ApiError(409, 'MISSION_LOCKED', `Lucka ${day} is not open yet`);
+    }
+    const missionId = await findMissionIdByDay(ctx.db, day);
+    if (missionId === null) throw new ApiError(404, 'NOT_FOUND', `No mission for day ${day}`);
+    await openLucka(ctx.db, user.id, missionId);
+    return { day, opened: true as const };
   });
 
   async function changeCompletion(

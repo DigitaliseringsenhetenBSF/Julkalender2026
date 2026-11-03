@@ -1,70 +1,157 @@
-import type { CalendarResponse } from '../../shared/contract.ts';
+import { useEffect, useRef } from 'react';
+import type { ApiMission, CalendarResponse } from '../../shared/contract.ts';
 import { sv } from '../texts.sv.ts';
 
 interface MissionGridProps {
   calendar: CalendarResponse;
   busyDay: number | null;
   onToggle: (day: number, completed: boolean) => void;
+  onOpen: (day: number) => void;
 }
 
-/** The 24 luckor: locked ones show when they open; open ones can be ticked off any time. */
-export function MissionGrid({ calendar, busyDay, onToggle }: MissionGridProps) {
-  const closed = calendar.phase === 'closed';
+/**
+ * The 24 luckor as doors. A door whose date has come can be turned ("vänd") to reveal the
+ * uppdrag; once opened it stays open (stored on the server). Future doors show when they open.
+ */
+export function MissionGrid({ calendar, busyDay, onToggle, onOpen }: MissionGridProps) {
+  const headings = useRef(new Map<number, HTMLHeadingElement>());
+  const focusAfterOpen = useRef<number | null>(null);
+
+  // After turning a door, move focus to the uppdrag behind it so screen readers read it.
+  useEffect(() => {
+    const day = focusAfterOpen.current;
+    const heading = day === null ? undefined : headings.current.get(day);
+    if (heading) {
+      heading.focus();
+      focusAfterOpen.current = null;
+    }
+  });
+
+  function open(day: number) {
+    focusAfterOpen.current = day;
+    onOpen(day);
+  }
+
   return (
     <section className="card missions" aria-labelledby="missions-heading">
       <h2 id="missions-heading">{sv.missions.heading}</h2>
       <p className="lead">{sv.missions.lead}</p>
       <ol className="luckor">
-        {calendar.missions.map((mission) => {
-          if (mission.status === 'locked') {
-            return (
-              <li key={mission.day} className="lucka lucka--locked">
-                <span className="lucka__day" aria-hidden="true">
-                  {mission.day}
-                </span>
-                <span className="lucka__locked">
-                  <span aria-hidden="true">🔒 </span>
-                  <span className="visually-hidden">Lucka {mission.day}: </span>
-                  {sv.missions.locked(mission.opensOn)}
-                </span>
-              </li>
-            );
-          }
-          const title = mission.title ?? '';
-          const id = `lucka-${mission.day}`;
-          return (
-            <li
-              key={mission.day}
-              className={`lucka${mission.status === 'today' ? ' lucka--today' : ''}${
-                mission.completed ? ' lucka--done' : ''
-              }`}
-            >
-              <div className="lucka__top">
-                <span className="lucka__day" aria-hidden="true">
-                  {mission.day}
-                </span>
-                {mission.status === 'today' && (
-                  <span className="pill pill--today">{sv.missions.today}</span>
-                )}
-              </div>
-              <h3 className="lucka__title" id={`${id}-title`}>
-                {title}
-              </h3>
-              <p className="lucka__text">{mission.description}</p>
-              <label className="lucka__check">
-                <input
-                  type="checkbox"
-                  checked={mission.completed}
-                  disabled={closed || busyDay === mission.day}
-                  aria-label={sv.missions.checkboxLabel(mission.day, title)}
-                  onChange={(event) => onToggle(mission.day, event.currentTarget.checked)}
-                />
-                <span aria-hidden="true">{sv.missions.done}</span>
-              </label>
-            </li>
-          );
-        })}
+        {calendar.missions.map((mission) => (
+          <Lucka
+            key={mission.day}
+            mission={mission}
+            closed={calendar.phase === 'closed'}
+            busy={busyDay === mission.day}
+            onOpen={open}
+            onToggle={onToggle}
+            headingRef={(el) => {
+              if (el) headings.current.set(mission.day, el);
+              else headings.current.delete(mission.day);
+            }}
+          />
+        ))}
       </ol>
     </section>
+  );
+}
+
+interface LuckaProps {
+  mission: ApiMission;
+  closed: boolean;
+  busy: boolean;
+  onOpen: (day: number) => void;
+  onToggle: (day: number, completed: boolean) => void;
+  headingRef: (el: HTMLHeadingElement | null) => void;
+}
+
+function Lucka({ mission, closed, busy, onOpen, onToggle, headingRef }: LuckaProps) {
+  const isToday = mission.status === 'today';
+
+  if (mission.status === 'locked') {
+    return (
+      <li className="lucka lucka--locked">
+        <div className="door door--locked">
+          <span className="door__day" aria-hidden="true">
+            {mission.day}
+          </span>
+          <span className="door__hint">
+            <span aria-hidden="true">🔒 </span>
+            <span className="visually-hidden">Lucka {mission.day}: </span>
+            {sv.missions.locked(mission.opensOn)}
+          </span>
+        </div>
+      </li>
+    );
+  }
+
+  const classes = [
+    'lucka',
+    mission.opened && 'lucka--opened',
+    isToday && 'lucka--today',
+    mission.completed && 'lucka--done',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const title = mission.title ?? '';
+
+  // The button's name comes from its visible text ("Lucka 3 … Öppna"), so what sighted
+  // speech-input users see is part of what they can say (WCAG 2.5.3 Label in Name).
+  const doorFace = (
+    <>
+      <span className="door__day">
+        <span className="visually-hidden">Lucka </span>
+        {mission.day}
+      </span>
+      {isToday && <span className="pill pill--today">{sv.missions.today}</span>}
+      <span className="door__hint">{sv.missions.open}</span>
+      <span className="door__knob" aria-hidden="true" />
+    </>
+  );
+
+  return (
+    <li className={classes}>
+      <div className="lucka__inner">
+        <div className="lucka__face lucka__front" aria-hidden={mission.opened || undefined}>
+          {mission.opened ? (
+            <div className="door">{doorFace}</div>
+          ) : (
+            <button type="button" className="door" onClick={() => onOpen(mission.day)}>
+              {doorFace}
+            </button>
+          )}
+        </div>
+        {/* The back is only rendered once opened, so unopened uppdrag stay a surprise. */}
+        {mission.opened && (
+          <div className="lucka__face lucka__back">
+            <div className="lucka__top">
+              <span className="lucka__day" aria-hidden="true">
+                {mission.day}
+              </span>
+              {isToday && <span className="pill pill--today">{sv.missions.today}</span>}
+            </div>
+            <h3 className="lucka__title" ref={headingRef} tabIndex={-1}>
+              <span className="visually-hidden">Lucka {mission.day}: </span>
+              {title}
+            </h3>
+            <p className="lucka__text">{mission.description}</p>
+            <label className="lucka__check">
+              <input
+                type="checkbox"
+                checked={mission.completed}
+                disabled={closed || busy}
+                aria-label={sv.missions.checkboxLabel(mission.day, title)}
+                onChange={(event) => onToggle(mission.day, event.currentTarget.checked)}
+              />
+              <span aria-hidden="true">{sv.missions.done}</span>
+            </label>
+            <p className="lucka__stat">
+              <span aria-hidden="true">👥 </span>
+              {sv.missions.others(mission.completions, mission.completed)}
+            </p>
+          </div>
+        )}
+      </div>
+    </li>
   );
 }

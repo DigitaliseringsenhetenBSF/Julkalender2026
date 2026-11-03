@@ -72,7 +72,9 @@ in sync.
       "status": "open",
       "title": "Uppdrag 1",
       "description": "…",
-      "completed": true
+      "completed": true,
+      "opened": true,
+      "completions": 7
     },
     {
       "day": 10,
@@ -80,7 +82,9 @@ in sync.
       "status": "today",
       "title": "Uppdrag 10",
       "description": "…",
-      "completed": false
+      "completed": false,
+      "opened": false,
+      "completions": 5
     },
     {
       "day": 11,
@@ -88,7 +92,9 @@ in sync.
       "status": "locked",
       "title": null,
       "description": null,
-      "completed": false
+      "completed": false,
+      "opened": false,
+      "completions": 0
     }
   ]
 }
@@ -96,7 +102,30 @@ in sync.
 
 - `phase` is one of `before | active | catch_up | closed`.
 - `status` is one of `locked | open | today`.
-- Locked luckor always have `title = null` and `description = null`.
+- Locked luckor always have `title = null` and `description = null`, and they have
+  `opened = false` and `completions = 0`.
+- `opened` is `true` once the user has opened the lucka, or if they have ever completed it.
+- `completions` is how many people, the user included, have completed that uppdrag. The UI shows
+  the number of others.
+
+### `POST /api/openings`
+
+Body: `{ "day": 1..24 }`. Opens ("vänder") the lucka for the user. It is idempotent, and an
+opened lucka stays open.
+
+`200`:
+
+```json
+{ "day": 3, "opened": true }
+```
+
+Errors:
+
+- `400` if the day is invalid;
+- `401` without a session;
+- `409 MISSION_LOCKED` if the lucka's date has not come.
+
+Opening is allowed after the close date.
 
 ### `GET /api/progress`
 

@@ -47,7 +47,7 @@ export async function prepareDatabase(ctx: AppContext): Promise<void> {
 /** Test-only: wipe personal data and restore seed + demo state (used by e2e tests). */
 export async function resetDatabase(ctx: AppContext): Promise<void> {
   await ctx.db.exec(`
-    TRUNCATE board_pieces, completions, users RESTART IDENTITY CASCADE;
+    TRUNCATE board_pieces, lucka_openings, completions, users RESTART IDENTITY CASCADE;
     UPDATE campaign_state SET unlocked_pieces = 0, updated_at = now() WHERE id = 1;
   `);
   await prepareDatabase(ctx);

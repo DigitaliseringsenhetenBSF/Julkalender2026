@@ -26,6 +26,15 @@ export function formatDate(iso: string): string {
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
+/** "2026-12-01", "2026-12-24" → "1–24 december" (or "28 november–3 december"). */
+function dateRange(from: string, to: string): string {
+  const [, fromMonth, fromDay] = from.split('-').map(Number);
+  const [, toMonth] = to.split('-').map(Number);
+  return fromMonth === toMonth
+    ? `${fromDay}–${formatDate(to)}`
+    : `${formatDate(from)}–${formatDate(to)}`;
+}
+
 export const sv = {
   appName: 'Miljöjulkalendern',
   orgLine: 'Skolkontoret · Barn- och skolförvaltningen, Lunds kommun',
@@ -46,10 +55,15 @@ export const sv = {
 
   intro: {
     title: 'Så funkar Miljöjulkalendern',
-    items: (perPiece: number) => [
-      'Varje dag 1–24 december öppnas en ny lucka med ett miljöuppdrag.',
-      'Gör uppdraget och bocka av det. Har du missat en dag kan du bocka av tidigare luckor i efterhand.',
-      `Alla avbockningar på Skolkontoret räknas ihop. Var ${perPiece}:e avklarade uppdrag låser upp en ny pusselbit.`,
+    items: (o: {
+      perPiece: number;
+      firstDate: string;
+      lastMissionDate: string;
+      lastTickOffDate: string;
+    }) => [
+      `Varje dag ${dateRange(o.firstDate, o.lastMissionDate)} kan du öppna en ny lucka med ett miljöuppdrag. En lucka du har öppnat förblir öppen.`,
+      `Gör uppdraget och bocka av det i luckan. Har du missat en dag kan du öppna och bocka av tidigare luckor i efterhand – du har fram till och med ${formatDate(o.lastTickOffDate)} på dig.`,
+      `Alla avbockningar på Skolkontoret räknas ihop. Var ${o.perPiece}:e avklarade uppdrag låser upp en ny pusselbit.`,
       'Lägg pusslet själv – dina bitar sparas och ligger kvar nästa gång du kommer tillbaka.',
     ],
   },
@@ -57,6 +71,8 @@ export const sv = {
   today: {
     heading: 'Dagens uppdrag',
     lucka: (day: number, date: string) => `Lucka ${day} · ${formatDate(date)}`,
+    closedDoor: (day: number) => `Dagens lucka är nummer ${day}. Vänd den för att se uppdraget!`,
+    openToday: 'Öppna dagens lucka',
     before: (date: string) => `Kalendern öppnar ${formatDate(date)}. Välkommen tillbaka då!`,
     daysLeft: (n: number) => plural(n, 'En dag kvar.', `${n} dagar kvar.`),
     catchUp: (date: string) =>
@@ -132,11 +148,26 @@ export const sv = {
 
   missions: {
     heading: 'Alla luckor',
-    lead: 'Bocka av uppdragen du har gjort – även från tidigare dagar.',
+    lead: 'Öppna luckorna och bocka av uppdragen du har gjort – även från tidigare dagar.',
     locked: (date: string) => `Öppnas ${formatDate(date)}`,
     today: 'Idag',
+    open: 'Öppna',
     done: 'Gjort',
     checkboxLabel: (day: number, title: string) => `Jag har gjort uppdrag ${day}: ${title}`,
+    /** How many others have done this uppdrag; `completions` includes the user if they did it. */
+    others: (completions: number, completedByMe: boolean) => {
+      const others = completions - (completedByMe ? 1 : 0);
+      if (completedByMe) {
+        if (others <= 0) return 'Du är först med det här uppdraget!';
+        return others === 1
+          ? 'Du och en kollega har gjort uppdraget.'
+          : `Du och ${others} kollegor har gjort uppdraget.`;
+      }
+      if (others <= 0) return 'Ingen har gjort uppdraget än – bli först!';
+      return others === 1
+        ? 'En kollega har gjort uppdraget.'
+        : `${others} kollegor har gjort uppdraget.`;
+    },
   },
 
   stats: {
@@ -148,12 +179,6 @@ export const sv = {
     pieces: 'Pusselbitar',
     piecesValue: (unlocked: number, total: number) => `${unlocked} av ${total}`,
     participants: 'Deltagare',
-    perDayHeading: 'Avklarade uppdrag per lucka',
-    perDayEmpty: 'Statistiken per lucka visas när kalendern har öppnat.',
-    showTable: 'Visa som tabell',
-    colDay: 'Lucka',
-    colCount: 'Avklarade uppdrag',
-    barTooltip: (day: number, n: number) => `Lucka ${day}: ${n} avklarade`,
   },
 
   celebrate: {
@@ -171,7 +196,7 @@ export const sv = {
   privacy: {
     heading: 'Om dina uppgifter',
     paragraphs: [
-      'Vi sparar ditt namn, vilka uppdrag du har bockat av och var du har lagt dina pusselbitar – inget annat.',
+      'Vi sparar ditt namn, vilka luckor du har öppnat, vilka uppdrag du har bockat av och var du har lagt dina pusselbitar – inget annat.',
       'Ingen annan kan se dina uppgifter. Andra ser bara summan för hela Skolkontoret.',
       'Uppgifterna raderas efter kampanjen, senast 31 januari 2027.',
     ],

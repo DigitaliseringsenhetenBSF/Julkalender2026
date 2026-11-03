@@ -3,6 +3,7 @@ import {
   calendarResponse,
   completionResponse,
   errorResponse,
+  openingResponse,
   progressSchema,
 } from '../../src/shared/contract.ts';
 import { body, createUsers, signIn, startTestServer, type TestServer } from './helpers.ts';
@@ -41,7 +42,20 @@ describe('GET /api/calendar', () => {
       title: null,
       description: null,
       opensOn: '2026-12-11',
+      opened: false,
+      completions: 0,
     });
+  });
+
+  it('shows how many have done each uppdrag', async () => {
+    const other = await signIn(server, 1);
+    await tick(2);
+    await tick(2, other);
+    await tick(5, other);
+    const calendar = body(calendarResponse, await get('/api/calendar'));
+    expect(calendar.missions.slice(0, 5).map((m) => m.completions)).toEqual([0, 2, 0, 0, 1]);
+    expect(calendar.missions[1]).toMatchObject({ completed: true, completions: 2 });
+    expect(calendar.missions[4]).toMatchObject({ completed: false, completions: 1 });
   });
 
   it('follows the server clock across midnight', async () => {
@@ -53,6 +67,54 @@ describe('GET /api/calendar', () => {
     server.clock.set('2026-12-01T00:00:00+01:00');
     calendar = body(calendarResponse, await get('/api/calendar'));
     expect(calendar.missions[0]?.status).toBe('today');
+  });
+});
+
+describe('POST /api/openings', () => {
+  const open = (day: number, as = cookie) =>
+    server.app.inject({
+      method: 'POST',
+      url: '/api/openings',
+      payload: { day },
+      headers: { cookie: as },
+    });
+  const missionsOf = async (as = cookie) =>
+    body(calendarResponse, await get('/api/calendar', as)).missions;
+
+  it('opens a lucka once and keeps it open, for this user only', async () => {
+    expect((await missionsOf())[2]?.opened).toBe(false);
+    const response = await open(3);
+    expect(response.statusCode).toBe(200);
+    expect(body(openingResponse, response)).toEqual({ day: 3, opened: true });
+    expect((await open(3)).statusCode).toBe(200); // idempotent
+
+    expect((await missionsOf())[2]?.opened).toBe(true);
+    const other = await signIn(server, 1);
+    expect((await missionsOf(other))[2]?.opened).toBe(false);
+  });
+
+  it('counts a ticked-off lucka as opened', async () => {
+    await tick(4);
+    expect((await missionsOf())[3]).toMatchObject({ completed: true, opened: true });
+    // Un-ticking does not close it again.
+    await untick(4);
+    await open(4);
+    expect((await missionsOf())[3]).toMatchObject({ completed: false, opened: true });
+  });
+
+  it('rejects opening a future lucka', async () => {
+    const response = await open(11);
+    expect(response.statusCode).toBe(409);
+    expect(body(errorResponse, response).error.code).toBe('MISSION_LOCKED');
+  });
+
+  it('still lets late visitors open luckor after the close date', async () => {
+    server.clock.set('2027-01-20');
+    expect((await open(24)).statusCode).toBe(200);
+  });
+
+  it('validates the day', async () => {
+    expect((await open(25)).statusCode).toBe(400);
   });
 });
 

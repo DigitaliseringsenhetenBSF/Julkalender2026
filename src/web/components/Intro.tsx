@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { addDays } from '../../domain/calendar.ts';
+import type { CalendarResponse } from '../../shared/contract.ts';
 import { sv } from '../texts.sv.ts';
 
 const SEEN_KEY = 'mjk-intro-seen';
@@ -12,7 +14,13 @@ function readSeen(): boolean {
 }
 
 /** "Så funkar det" – open on the first visit, remembered per browser as a convenience. */
-export function Intro({ completionsPerPiece }: { completionsPerPiece: number }) {
+export function Intro({
+  calendar,
+  completionsPerPiece,
+}: {
+  calendar: CalendarResponse;
+  completionsPerPiece: number;
+}) {
   const [open] = useState(() => !readSeen());
 
   function onToggle(event: React.SyntheticEvent<HTMLDetailsElement>) {
@@ -27,9 +35,16 @@ export function Intro({ completionsPerPiece }: { completionsPerPiece: number }) 
     <details className="card intro" open={open} onToggle={onToggle}>
       <summary>{sv.intro.title}</summary>
       <ol>
-        {sv.intro.items(completionsPerPiece).map((item) => (
-          <li key={item}>{item}</li>
-        ))}
+        {sv.intro
+          .items({
+            perPiece: completionsPerPiece,
+            firstDate: calendar.firstMissionDate,
+            lastMissionDate: addDays(calendar.firstMissionDate, calendar.totalMissions - 1),
+            lastTickOffDate: calendar.lastTickOffDate,
+          })
+          .map((item) => (
+            <li key={item}>{item}</li>
+          ))}
       </ol>
     </details>
   );

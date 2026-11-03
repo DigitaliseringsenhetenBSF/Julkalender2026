@@ -18,15 +18,16 @@ try {
   console.log(`Database: ${target}`);
   console.log(
     `Personal data: ${counts.users} users, ${counts.completions} completions, ` +
-      `${counts.boardPieces} board pieces.`,
+      `${counts.openings} opened luckor, ${counts.boardPieces} board pieces.`,
   );
   if (!confirm) {
     console.log('Dry run – nothing deleted. Re-run with --confirm to purge.');
   } else {
     const deleted = await purgePersonalData(db);
     console.log(
-      `Purged ${deleted.users} users, ${deleted.completions} completions and ` +
-        `${deleted.boardPieces} board pieces. Anonymous per-lucka totals kept in campaign_summary.`,
+      `Purged ${deleted.users} users, ${deleted.completions} completions, ` +
+        `${deleted.openings} opened luckor and ${deleted.boardPieces} board pieces. ` +
+        'Anonymous per-lucka totals kept in campaign_summary.',
     );
   }
 } finally {

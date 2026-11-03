@@ -19,6 +19,10 @@ test('tick off → new piece → drag to board → reload → still placed', asy
   await expect(page.getByText('Tillsammans har vi klarat 59 uppdrag')).toBeVisible();
   await expect(loosePieces(page)).toHaveCount(3);
 
+  // Today's lucka is a closed door until it is turned over.
+  await page.getByRole('button', { name: 'Öppna dagens lucka' }).click();
+  await expect(page.getByRole('heading', { name: 'Uppdrag 10' }).first()).toBeVisible();
+
   // Ticking off today's uppdrag is the 60th completion and unlocks piece number 4.
   await page.getByRole('button', { name: 'Jag har gjort det!' }).click();
   await expect(page.getByText('Tillsammans har vi klarat 60 uppdrag')).toBeVisible();
@@ -64,6 +68,11 @@ test('keyboard only: pick a piece, choose its slot, tick off a lucka', async ({ 
   // Focus moves on to the next loose piece.
   await expect(page.locator('button.piece:focus')).toHaveCount(1);
 
+  // Turn lucka 3 over: focus moves to the uppdrag behind the door.
+  await page.getByRole('button', { name: 'Lucka 3 Öppna', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Lucka 3: Uppdrag 3' })).toBeFocused();
+  // (Safari's default Tab skips checkboxes, so focus it directly; Space still toggles it.)
   const checkbox = page.getByRole('checkbox', { name: /Jag har gjort uppdrag 3:/ });
   await checkbox.focus();
   await page.keyboard.press('Space');
@@ -93,8 +102,25 @@ test('a wrong slot keeps the piece selected and Escape cancels', async ({ page }
 test('future luckor are locked and show when they open', async ({ page }) => {
   await signIn(page);
   await expect(page.getByText('Öppnas 11 december')).toBeVisible();
-  await expect(page.getByRole('checkbox', { name: /Jag har gjort uppdrag 11:/ })).toHaveCount(0);
-  await expect(page.getByRole('checkbox')).toHaveCount(10);
+  await expect(page.getByRole('button', { name: /^Lucka 11 / })).toHaveCount(0);
+  // Luckor 1–10 are closed doors that can be opened; no uppdrag is visible yet.
+  await expect(page.getByRole('button', { name: /^Lucka \d+ .*Öppna$/ })).toHaveCount(10);
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
+});
+
+test('an opened lucka stays open and shows how many have done the uppdrag', async ({ page }) => {
+  await signIn(page);
+  await page.getByRole('button', { name: 'Lucka 2 Öppna', exact: true }).click();
+  const lucka = page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 2' });
+  // Demo data: six colleagues have done each of the first luckor.
+  await expect(lucka).toContainText(/\d+ kollegor har gjort uppdraget/);
+
+  await lucka.getByRole('checkbox').check();
+  await expect(lucka).toContainText(/Du och \d+ kollegor har gjort uppdraget/);
+
+  await page.reload();
+  await expect(page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 2' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Lucka 2 Öppna', exact: true })).toHaveCount(0);
 });
 
 test('the server rejects a future tick-off even if the UI is bypassed', async ({ page }) => {

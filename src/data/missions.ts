@@ -7,8 +7,28 @@ export interface MissionRow {
   description: string;
 }
 
-export async function listMissions(db: Queryable): Promise<MissionRow[]> {
-  return db.query<MissionRow>('SELECT id, day, title, description FROM missions ORDER BY day');
+/** A mission as seen by one user, with the collective completion count for that uppdrag. */
+export interface UserMissionRow extends MissionRow {
+  completed: boolean;
+  opened: boolean;
+  completions: number;
+}
+
+export async function listMissionsForUser(
+  db: Queryable,
+  userId: number,
+): Promise<UserMissionRow[]> {
+  return db.query<UserMissionRow>(
+    `SELECT m.id, m.day, m.title, m.description,
+            EXISTS (SELECT 1 FROM completions c
+                    WHERE c.mission_id = m.id AND c.user_id = $1) AS completed,
+            EXISTS (SELECT 1 FROM lucka_openings o
+                    WHERE o.mission_id = m.id AND o.user_id = $1) AS opened,
+            (SELECT count(*)::int FROM completions c WHERE c.mission_id = m.id) AS completions
+     FROM missions m
+     ORDER BY m.day`,
+    [userId],
+  );
 }
 
 export async function findMissionIdByDay(db: Queryable, day: number): Promise<number | null> {
@@ -16,10 +36,11 @@ export async function findMissionIdByDay(db: Queryable, day: number): Promise<nu
   return row?.id ?? null;
 }
 
-export async function listCompletedDays(db: Queryable, userId: number): Promise<Set<number>> {
-  const rows = await db.query<{ day: number }>(
-    `SELECT m.day FROM completions c JOIN missions m ON m.id = c.mission_id WHERE c.user_id = $1`,
-    [userId],
+/** Idempotent: a lucka is opened once and stays open. */
+export async function openLucka(db: Queryable, userId: number, missionId: number): Promise<void> {
+  await db.query(
+    `INSERT INTO lucka_openings (user_id, mission_id) VALUES ($1, $2)
+     ON CONFLICT (user_id, mission_id) DO NOTHING`,
+    [userId, missionId],
   );
-  return new Set(rows.map((r) => r.day));
 }

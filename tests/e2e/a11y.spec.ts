@@ -31,6 +31,14 @@ test('calendar page has no serious accessibility violations', async ({ page }) =
   await expectNoSeriousViolations(page);
 });
 
+test('opened luckor have no serious accessibility violations', async ({ page }) => {
+  await signIn(page);
+  await page.getByRole('button', { name: 'Lucka 1 Öppna', exact: true }).click();
+  await page.getByRole('button', { name: 'Öppna dagens lucka' }).click();
+  await expect(page.locator('.lucka--opened')).toHaveCount(2);
+  await expectNoSeriousViolations(page);
+});
+
 test('puzzle selection mode has no serious accessibility violations', async ({ page }) => {
   await signIn(page);
   await loosePieces(page).first().focus();

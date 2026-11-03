@@ -42,6 +42,8 @@ erDiagram
   users ||--o{ completions : makes
   missions ||--o{ completions : "completed in"
   users ||--o{ board_pieces : owns
+  users ||--o{ lucka_openings : opens
+  missions ||--o{ lucka_openings : "opened as"
   puzzle_pieces ||--o{ board_pieces : "positioned as"
 
   users {
@@ -75,6 +77,11 @@ erDiagram
     smallint id PK "always 1"
     int unlocked_pieces "high-water mark"
     timestamptz updated_at
+  }
+  lucka_openings {
+    int user_id PK,FK
+    int mission_id PK,FK
+    timestamptz opened_at
   }
   board_pieces {
     int user_id PK,FK

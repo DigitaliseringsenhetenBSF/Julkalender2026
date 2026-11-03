@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { daysBetween } from '../../domain/calendar.ts';
 import type { CalendarResponse } from '../../shared/contract.ts';
 import { sv } from '../texts.sv.ts';
@@ -6,10 +7,21 @@ interface TodayCardProps {
   calendar: CalendarResponse;
   busyDay: number | null;
   onToggle: (day: number, completed: boolean) => void;
+  onOpen: (day: number) => void;
 }
 
-export function TodayCard({ calendar, busyDay, onToggle }: TodayCardProps) {
+export function TodayCard({ calendar, busyDay, onToggle, onOpen }: TodayCardProps) {
   const todayMission = calendar.missions.find((m) => m.status === 'today');
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const focusTitle = useRef(false);
+
+  // After opening today's lucka here, move focus to the uppdrag that appeared.
+  useEffect(() => {
+    if (focusTitle.current && titleRef.current) {
+      titleRef.current.focus();
+      focusTitle.current = false;
+    }
+  });
 
   let body: React.ReactNode;
   if (calendar.phase === 'before') {
@@ -31,12 +43,31 @@ export function TodayCard({ calendar, busyDay, onToggle }: TodayCardProps) {
         <p className="muted">{sv.today.leftToDo(left)}</p>
       </>
     );
+  } else if (!todayMission.opened) {
+    body = (
+      <>
+        <p className="eyebrow">{sv.today.lucka(todayMission.day, todayMission.opensOn)}</p>
+        <p className="today__lead">{sv.today.closedDoor(todayMission.day)}</p>
+        <button
+          type="button"
+          className="button button--primary button--large"
+          onClick={() => {
+            focusTitle.current = true;
+            onOpen(todayMission.day);
+          }}
+        >
+          {sv.today.openToday}
+        </button>
+      </>
+    );
   } else {
     const busy = busyDay === todayMission.day;
     body = (
       <>
         <p className="eyebrow">{sv.today.lucka(todayMission.day, todayMission.opensOn)}</p>
-        <h3 className="today__title">{todayMission.title}</h3>
+        <h3 className="today__title" ref={titleRef} tabIndex={-1}>
+          {todayMission.title}
+        </h3>
         <p>{todayMission.description}</p>
         {todayMission.completed ? (
           <div className="today__done">
@@ -64,6 +95,10 @@ export function TodayCard({ calendar, busyDay, onToggle }: TodayCardProps) {
             {sv.today.doIt}
           </button>
         )}
+        <p className="today__stat muted">
+          <span aria-hidden="true">👥 </span>
+          {sv.missions.others(todayMission.completions, todayMission.completed)}
+        </p>
       </>
     );
   }

@@ -20,16 +20,24 @@ describe('GDPR purge', () => {
       });
     }
     await server.app.inject({ method: 'GET', url: '/api/board', headers: { cookie: cookies[0] } });
+    await server.app.inject({
+      method: 'POST',
+      url: '/api/openings',
+      payload: { day: 1 },
+      headers: { cookie: cookies[0] },
+    });
 
     const before = await countPersonalData(server.ctx.db);
     expect(before.completions).toBe(16);
     expect(before.boardPieces).toBe(1);
+    expect(before.openings).toBe(1);
 
     await purgePersonalData(server.ctx.db);
 
     expect(await countPersonalData(server.ctx.db)).toEqual({
       users: 0,
       completions: 0,
+      openings: 0,
       boardPieces: 0,
     });
     const summary = await server.ctx.db.query<{ day: number; completions: number }>(

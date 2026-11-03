@@ -32,10 +32,15 @@ Product thesis: small individual actions become meaningful when they visibly add
    - They see a short "Så funkar det" explanation, today's uppdrag, the puzzle and the shared
      progress.
 2. **Daily tick-off:**
-   - The user presses "Jag har gjort det!" and the counter updates.
+   - The user opens ("vänder") today's lucka, either in the "Dagens uppdrag" card or in the
+     lucka grid. A door turns over and reveals the uppdrag, and it stays open from then on.
+   - The user presses "Jag har gjort det!" (or ticks "Gjort" in the lucka) and the counter
+     updates.
+   - Each opened lucka shows how many colleagues have done that uppdrag.
    - If the total crosses a multiple of 15, a new pusselbit appears in a tray with a short,
      non-intrusive message.
-3. **Catch-up:** The user ticks off several earlier luckor in the lucka grid.
+3. **Catch-up:** The user opens and ticks off several earlier luckor in the lucka grid, until
+   the close date (2027-01-10). The intro text states the close date.
 4. **Puzzle play:**
    - The user drags pieces from the trays to the board, or uses the keyboard to pick a piece and
      choose a slot.
@@ -106,6 +111,19 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
   but unlocked pieces stay (§5.3).
 - This is an honour system. Completions are not verified.
 
+### 5.2a Opening luckor ("vända luckan")
+
+- A lucka whose date has come is shown as a closed door. The user opens it with a click, tap or
+  Enter. It turns over and reveals the uppdrag, the "Gjort" checkbox and the per-uppdrag count
+  (§6).
+- An opened lucka **stays open** for that user on every device. It is stored in
+  `lucka_openings` (`PRIMARY KEY (user_id, mission_id)`, idempotent `POST /api/openings`) and
+  there is no way to close it again.
+- A completed lucka always counts as opened, including after an un-tick.
+- Opening a lucka whose date has not come → `409 MISSION_LOCKED`. Opening is still allowed after
+  the close date, so late visitors can read the uppdrag. Ticking off is not.
+- Opening a lucka has no effect on the counter or the puzzle.
+
 ### 5.3 Shared counter and pusselbitar
 
 - `total` is always derived from `count(*)` over `completions`. It is never incremented by hand.
@@ -165,15 +183,18 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
 
 ## 6. Statistics (definitions)
 
-| Statistic                 | Definition                                                                  |
-| ------------------------- | --------------------------------------------------------------------------- |
-| Mina uppdrag              | `count(completions where user = me)` "av" `openMissionCount(today)` möjliga |
-| Tillsammans – uppdrag     | `count(completions)`                                                        |
-| Tillsammans – pusselbitar | `campaign_state.unlocked_pieces` "av" piece count                           |
-| Deltagare                 | `count(distinct user_id)` in completions                                    |
-| Per lucka                 | `count(completions)` grouped by mission day (open luckor only)              |
+| Statistic                 | Definition                                                                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mina uppdrag              | `count(completions where user = me)` "av" `openMissionCount(today)` möjliga                                                                                                         |
+| Tillsammans – uppdrag     | `count(completions)`                                                                                                                                                                |
+| Tillsammans – pusselbitar | `campaign_state.unlocked_pieces` "av" piece count                                                                                                                                   |
+| Deltagare                 | `count(distinct user_id)` in completions                                                                                                                                            |
+| Per uppdrag               | `count(completions)` for that mission. Shown on each opened lucka as "Du och 6 kollegor har gjort uppdraget" or "7 kollegor har gjort uppdraget" (the user excluded from "others"). |
 
-No per-person data about anyone else is ever shown. There is no leaderboard.
+There is no separate per-lucka chart: since 2026-11-03 the per-uppdrag count is shown on each
+lucka instead.
+
+No per-person data about anyone else is ever shown, only counts. There is no leaderboard.
 
 ## 7. Data model
 
@@ -184,6 +205,7 @@ No per-person data about anyone else is ever shown. There is no leaderboard.
 | `completions`       | `user_id`, `mission_id`, `completed_at`                                                                          | PK `(user_id, mission_id)`                     |
 | `puzzle_pieces`     | `id` (1–24), `grid_row`, `grid_col`, `unlock_rank` (unique), `image_file`, `alt_text`                            |                                                |
 | `campaign_state`    | singleton `id = 1`, `unlocked_pieces`, `updated_at`                                                              |                                                |
+| `lucka_openings`    | `user_id`, `mission_id`, `opened_at`                                                                             | PK `(user_id, mission_id)`; migration 002      |
 | `board_pieces`      | `user_id`, `piece_id`, `area`, `x`, `y`, `z`, `placed`, `is_new`, `updated_at`                                   | PK `(user_id, piece_id)`                       |
 | `campaign_summary`  | `day`, `completions`, `participants`, `captured_at`                                                              | Anonymous aggregates written by the GDPR purge |
 | `schema_migrations` | `name`, `applied_at`                                                                                             |                                                |
@@ -228,6 +250,7 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Data stored:**
   - stable user identifier (`external_id`) and display name;
   - completions with timestamps;
+  - which luckor the user has opened, with timestamps;
   - piece positions.
 
   Nothing else: no e-mail, no IP logging in the app database.
@@ -238,7 +261,7 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Retention:** until the purge, at the latest **2027-01-31** (proposed).
 - **Purge:** `npm run gdpr:purge -- --confirm`. In a single transaction it:
   - writes anonymous per-lucka aggregates to `campaign_summary`;
-  - deletes `board_pieces`, `completions` and `users`.
+  - deletes `board_pieces`, `lucka_openings`, `completions` and `users`.
 
   Without `--confirm` it is a dry run. It must not be run in a shared environment without explicit
   approval.
@@ -333,14 +356,15 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 15. Decisions log
 
-| Date       | Decision                                                                                       | Why                                                     | Alternatives                          |
-| ---------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------- |
-| 2026-11-03 | Stack: TypeScript, Fastify, zod, PostgreSQL (PGlite locally), React + Vite, Vitest, Playwright | One language, boring tech, no Docker needed locally     | Python/FastAPI; verktygsportal module |
-| 2026-11-03 | Plain SQL + small adapter, numbered migrations                                                 | Auditable, no ORM to learn                              | Drizzle, Kysely                       |
-| 2026-11-03 | Temporary `AUTH_MODE=dev`, refused in production                                               | Owner deferred sign-in; never bypass auth in production | Shared campaign code                  |
-| 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces                            | Owner answers                                           | –                                     |
-| 2026-11-03 | Piece images gated by unlock; facit never served                                               | Keep the picture a surprise                             | Serve all statically                  |
-| 2026-11-03 | Snapped pieces lock                                                                            | Prevents accidental moves; simpler keyboard model       | Movable after snap                    |
+| Date       | Decision                                                                                                                 | Why                                                     | Alternatives                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------------------------------- |
+| 2026-11-03 | Stack: TypeScript, Fastify, zod, PostgreSQL (PGlite locally), React + Vite, Vitest, Playwright                           | One language, boring tech, no Docker needed locally     | Python/FastAPI; verktygsportal module              |
+| 2026-11-03 | Plain SQL + small adapter, numbered migrations                                                                           | Auditable, no ORM to learn                              | Drizzle, Kysely                                    |
+| 2026-11-03 | Temporary `AUTH_MODE=dev`, refused in production                                                                         | Owner deferred sign-in; never bypass auth in production | Shared campaign code                               |
+| 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces                                                      | Owner answers                                           | –                                                  |
+| 2026-11-03 | Piece images gated by unlock; facit never served                                                                         | Keep the picture a surprise                             | Serve all statically                               |
+| 2026-11-03 | Luckor are doors that turn over and stay open (server-stored); per-uppdrag counts on each lucka; per-lucka chart removed | Campaign owner's request                                | Plain list with checkboxes; client-only open state |
+| 2026-11-03 | Snapped pieces lock                                                                                                      | Prevents accidental moves; simpler keyboard model       | Movable after snap                                 |
 
 ## 16. Engineering conventions (the six core areas)
 

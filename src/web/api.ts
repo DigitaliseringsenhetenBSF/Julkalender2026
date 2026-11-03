@@ -8,6 +8,7 @@ import {
   errorResponse,
   meResponse,
   movePieceResponse,
+  openingResponse,
   progressSchema,
   type MovePieceRequest,
 } from '../shared/contract.ts';
@@ -65,6 +66,7 @@ export const api = {
   progress: () => request(progressSchema, 'GET', '/api/progress'),
   tick: (day: number) => request(completionResponse, 'POST', '/api/completions', { day }),
   untick: (day: number) => request(completionResponse, 'DELETE', `/api/completions/${day}`),
+  openLucka: (day: number) => request(openingResponse, 'POST', '/api/openings', { day }),
   board: () => request(boardResponse, 'GET', '/api/board'),
   movePiece: (id: number, body: MovePieceRequest) =>
     request(movePieceResponse, 'PUT', `/api/board/pieces/${id}`, body),

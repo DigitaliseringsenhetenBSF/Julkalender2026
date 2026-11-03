@@ -58,6 +58,17 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
 - [x] **axe.** AC: zero serious or critical issues.
 - [x] **`render.yaml`, `npm run smoke` and `npm run gdpr:purge`** (dry run by default).
 
+## Phase 5 – Feedback from the campaign owner (2026-11-03)
+
+- [x] **Intro states the close date** for tick-offs (from `campaign.json`).
+- [x] **Luckor are doors.** A door turns over to reveal the uppdrag and stays open (stored per
+      user, `POST /api/openings`). AC:
+  - it stays open after a reload and on other devices;
+  - future doors cannot be opened;
+  - keyboard focus moves to the uppdrag behind the door.
+- [x] **Per-uppdrag count** on each opened lucka ("Du och 6 kollegor har gjort uppdraget"). The
+      per-lucka chart is removed from Statistik.
+
 ## Later phases (need decisions or material)
 
 - [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in
