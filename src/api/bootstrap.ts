@@ -37,7 +37,10 @@ export async function prepareDatabase(ctx: AppContext): Promise<void> {
   await seedBase(ctx.db, ctx.content, { includeDevUsers: ctx.config.authMode === 'dev' });
   if (ctx.config.seedDemo) {
     const today = localDateInZone(ctx.clock.now(), ctx.calendar.timezone);
-    await seedDemo(ctx.db, ctx.content, openMissionCount(today, ctx.calendar));
+    const open = openMissionCount(today, ctx.calendar);
+    // Demo completions need open luckor; before 1 December just start without them.
+    if (open > 0) await seedDemo(ctx.db, ctx.content, open);
+    else console.warn('SEED_DEMO ignored: no luckor are open yet (set FAKE_TODAY to try it).');
   }
 }
 
