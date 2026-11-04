@@ -118,14 +118,18 @@ export function seedBase(
 }
 
 /**
- * Adds demo colleagues and `demoCompletions()` completions spread over the luckor that are open
- * on the given day count. Idempotent. Development/test only.
+ * Adds demo colleagues and `total` completions (default `demoCompletions()`) spread over the
+ * luckor that are open on the given day count. Idempotent. Development/test only.
  */
-export function seedDemo(db: Db, content: Content, openMissions: number): Promise<void> {
+export function seedDemo(
+  db: Db,
+  content: Content,
+  openMissions: number,
+  total: number = demoCompletions(content.campaign.completionsPerPiece),
+): Promise<void> {
   if (openMissions < 1) {
     throw new Error('No luckor are open yet – run with FAKE_TODAY=2026-12-10 (or later).');
   }
-  const total = demoCompletions(content.campaign.completionsPerPiece);
   const colleagues = Math.ceil(total / openMissions);
   return db.transaction(async (tx) => {
     const missions = await tx.query<{ id: number; day: number }>(
@@ -152,4 +156,25 @@ export function seedDemo(db: Db, content: Content, openMissions: number): Promis
     }
     await lockAndRaiseHighWaterMark(tx, pieceRules(content));
   });
+}
+
+/** The dev sign-in identity used to try laying the whole puzzle (`db:seed:all-pieces`). */
+export const PUZZLE_TESTER = {
+  externalId: `${DEV_USER_PREFIX}pusseltestare`,
+  displayName: 'Pusseltestare (alla bitar)',
+};
+
+/**
+ * Development only: enough demo completions to unlock every piece (completionsPerPiece × pieces),
+ * plus a fresh test user whose board starts with all pieces in the trays. Unlocking is shared,
+ * so every test user then has all pieces – the tester is just one who has not moved any yet.
+ */
+export async function seedAllPieces(db: Db, content: Content, openMissions: number): Promise<void> {
+  const rules = pieceRules(content);
+  await seedDemo(db, content, openMissions, rules.completionsPerPiece * rules.totalPieces);
+  await db.query(
+    `INSERT INTO users (external_id, display_name) VALUES ($1, $2)
+     ON CONFLICT (external_id) DO NOTHING`,
+    [PUZZLE_TESTER.externalId, PUZZLE_TESTER.displayName],
+  );
 }

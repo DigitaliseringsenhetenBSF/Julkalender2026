@@ -37,24 +37,25 @@ Open <http://localhost:5173>, choose a test user and try it out.
 
 ## Commands
 
-| Task                                      | Command                                                                                                |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Install                                   | `npm ci`                                                                                               |
-| Dev server (API on :3001 + Vite on :5173) | `npm run dev`                                                                                          |
-| Simulate a date (dev/staging only)        | `FAKE_TODAY=2026-12-10 npm run dev` or a full timestamp such as `FAKE_TODAY=2026-11-30T23:59:00+01:00` |
-| Migrate the database                      | `npm run db:migrate`                                                                                   |
-| Seed content and test users               | `npm run db:seed`                                                                                      |
-| Seed demo completions                     | `FAKE_TODAY=2026-12-10 npm run db:seed:demo`                                                           |
-| Unit and integration tests                | `npm test`                                                                                             |
-| E2E and accessibility tests               | `npx playwright install chromium webkit`, then `npm run test:e2e`                                      |
-| Lint / format / type check                | `npm run lint` · `npm run format` · `npm run typecheck`                                                |
-| Lint, type check and tests in one go      | `npm run check`                                                                                        |
-| Build                                     | `npm run build`                                                                                        |
-| Start (built app)                         | `npm start`                                                                                            |
-| Smoke verification                        | `npm run smoke -- http://localhost:3000`                                                               |
-| Cut the puzzle into jigsaw pieces         | `npm run puzzle:cut` (only before launch: the shapes must not change afterwards)                       |
-| GDPR purge after the campaign             | `npm run gdpr:purge` (dry run) · `npm run gdpr:purge -- --confirm`                                     |
-| Deploy                                    | Render Blueprint `render.yaml`. Not created yet; needs approval.                                       |
+| Task                                             | Command                                                                                                                                                         |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Install                                          | `npm ci`                                                                                                                                                        |
+| Dev server (API on :3001 + Vite on :5173)        | `npm run dev`                                                                                                                                                   |
+| Simulate a date (dev/staging only)               | `FAKE_TODAY=2026-12-10 npm run dev` or a full timestamp such as `FAKE_TODAY=2026-11-30T23:59:00+01:00`                                                          |
+| Migrate the database                             | `npm run db:migrate`                                                                                                                                            |
+| Seed content and test users                      | `npm run db:seed`                                                                                                                                               |
+| Seed demo completions                            | `FAKE_TODAY=2026-12-10 npm run db:seed:demo`                                                                                                                    |
+| Unlock every piece (try laying the whole puzzle) | Stop the dev server, then `FAKE_TODAY=2026-12-10 npm run db:seed:all-pieces`, and sign in as "Pusseltestare (alla bitar)". Delete `.data/pglite` to start over. |
+| Unit and integration tests                       | `npm test`                                                                                                                                                      |
+| E2E and accessibility tests                      | `npx playwright install chromium webkit`, then `npm run test:e2e`                                                                                               |
+| Lint / format / type check                       | `npm run lint` · `npm run format` · `npm run typecheck`                                                                                                         |
+| Lint, type check and tests in one go             | `npm run check`                                                                                                                                                 |
+| Build                                            | `npm run build`                                                                                                                                                 |
+| Start (built app)                                | `npm start`                                                                                                                                                     |
+| Smoke verification                               | `npm run smoke -- http://localhost:3000`                                                                                                                        |
+| Cut the puzzle into jigsaw pieces                | `npm run puzzle:cut` (only before launch: the shapes must not change afterwards)                                                                                |
+| GDPR purge after the campaign                    | `npm run gdpr:purge` (dry run) · `npm run gdpr:purge -- --confirm`                                                                                              |
+| Deploy                                           | Render Blueprint `render.yaml`. Not created yet; needs approval.                                                                                                |
 
 ## Changing content
 

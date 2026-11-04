@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { correctSlot, slotOrigin } from '../../src/domain/board.ts';
 import { loadContent } from '../../src/data/content.ts';
-import { seedBase } from '../../src/data/seed.ts';
+import { PUZZLE_TESTER, seedAllPieces, seedBase } from '../../src/data/seed.ts';
+import { devUsersResponse } from '../../src/shared/contract.ts';
 import { boardResponse, movePieceResponse } from '../../src/shared/contract.ts';
 import { body, createUsers, signIn, startTestServer, type TestServer } from './helpers.ts';
 
@@ -213,5 +214,25 @@ describe('seeding', () => {
     await expect(
       seedBase(server.ctx.db, content, { includeDevUsers: true }),
     ).resolves.toBeUndefined();
+  });
+
+  it('can unlock every piece for a puzzle tester (development only)', async () => {
+    await seedAllPieces(server.ctx.db, server.ctx.content, 10);
+    const { users } = body(
+      devUsersResponse,
+      await server.app.inject({ method: 'GET', url: '/api/dev-auth/users' }),
+    );
+    const tester = users.find((u) => u.displayName === PUZZLE_TESTER.displayName);
+    expect(tester).toBeDefined();
+    const login = await server.app.inject({
+      method: 'POST',
+      url: '/api/dev-auth/login',
+      payload: { userId: tester?.id },
+    });
+    const cookie = String(login.headers['set-cookie']).split(';')[0] ?? '';
+    const board = await getBoard(cookie);
+    expect(board.pieces).toHaveLength(TOTAL_PIECES);
+    expect(board.pieces.every((p) => p.area !== 'board')).toBe(true);
+    expect(board.complete).toBe(false);
   });
 });

@@ -1,11 +1,11 @@
 {
-  "$comment": "Source: '24 uppdrag.docx' from the campaign owner (2026-11-04). Source of truth for mission texts until the admin UI exists; the server applies this file on start. icon = file in assets/icons; iconDescription = the illustration the owner described (simplified line icons for now).",
+  "$comment": "Source: '24 uppdrag.docx' from the campaign owner (2026-11-04; \"tråden\" clarified as julkalenderns tråd i Skolkontorets Teams-chatt). Source of truth for mission texts until the admin UI exists; the server applies this file on start. icon = file in assets/icons; iconDescription = the illustration the owner described (simplified line icons for now).",
   "missions": [
     {
       "day": 1,
       "title": "Tipsa om ett miljöhack i teamet",
       "howTo": "Dela ett smart vardagsknep du använder hemma eller på jobbet (t.ex. återanvända brödpåsar, frysa in örter i olja, eller kaffesump som luktslukare).",
-      "ifYouWant": "Skriv ditt tips i tråden.",
+      "ifYouWant": "Skriv ditt tips i julkalenderns tråd i Skolkontorets Teams-chatt.",
       "icon": "lucka-01.svg",
       "iconDescription": "En glödlampa som växer upp ur en liten blomkruka."
     },
@@ -13,7 +13,7 @@
       "day": 2,
       "title": "Välj en säsongsanpassad råvara",
       "howTo": "Välj minst en säsongsanpassad råvara idag, till exempel morot, rödbeta, palsternacka eller vitkål. Att äta i säsong sparar både energi och långa transporter.",
-      "ifYouWant": "Ta en bild på din måltid eller skriv i tråden vilken råvara du valde och hur du använde den.",
+      "ifYouWant": "Ta en bild på din måltid eller skriv vilken råvara du valde och hur du använde den – i julkalenderns tråd i Skolkontorets Teams-chatt.",
       "icon": "lucka-02.svg",
       "iconDescription": "En rustik träkorg med rotfrukter (palsternacka, rödbeta och morot)."
     },
@@ -37,7 +37,7 @@
       "day": 5,
       "title": "Grön resdag – skippa ensambilresan",
       "howTo": "Ta bussen, tåget, cykla, gå eller samåk till jobbet idag. Jobbar du hemma idag räknas din pendling redan som nollutsläpp!",
-      "ifYouWant": "Ange ditt färdsätt i tråden (t.ex. \"Buss linje 4\" eller \"Vinterpromenad\").",
+      "ifYouWant": "Ange ditt färdsätt i julkalenderns tråd i Skolkontorets Teams-chatt (t.ex. \"Buss linje 4\" eller \"Vinterpromenad\").",
       "icon": "lucka-05.svg",
       "iconDescription": "En cykel med tomteluva och reflexer."
     },
@@ -93,7 +93,7 @@
       "day": 12,
       "title": "Favoritplats i naturen",
       "howTo": "Ett vuxet träd kan binda stora mängder koldioxid under sin livstid och naturen ger oss värdefull återhämtning. Ta en bild på eller beskriv din favoritplats i naturen och berätta varför platsen betyder något för dig.",
-      "ifYouWant": "Dela din bild eller text i tråden.",
+      "ifYouWant": "Dela din bild eller text i julkalenderns tråd i Skolkontorets Teams-chatt.",
       "icon": "lucka-12.svg",
       "iconDescription": "Ett ståtligt snötäckt träd i skogsbrynet med vintersol."
     },
@@ -101,7 +101,7 @@
       "day": 13,
       "title": "Visa ditt bästa loppisfynd",
       "howTo": "Dela med dig av något du köpt begagnat som du har haft stor glädje av genom åren.",
-      "ifYouWant": "Ladda upp en bild på fyndet i tråden.",
+      "ifYouWant": "Ladda upp en bild på fyndet i julkalenderns tråd i Skolkontorets Teams-chatt.",
       "icon": "lucka-13.svg",
       "iconDescription": "En retro kaffekopp i porslin eller en klassisk mässingsljusstake."
     },
@@ -109,7 +109,7 @@
       "day": 14,
       "title": "Årets hållbara vana under 2026",
       "howTo": "Reflektera över året som gått: Vilken vardagsvana har du förändrat för att minska din miljöpåverkan under 2026? Eller vad har du helt slutat göra?",
-      "ifYouWant": "Skriv din vana eller förändring i tråden för att inspirera kollegorna.",
+      "ifYouWant": "Skriv din vana eller förändring i julkalenderns tråd i Skolkontorets Teams-chatt för att inspirera kollegorna.",
       "icon": "lucka-14.svg",
       "iconDescription": "En kalender för 2026 med en grön bock och ett litet groddskott."
     },
@@ -125,7 +125,7 @@
       "day": 16,
       "title": "Utmana dig med en köpfri vecka",
       "howTo": "Konsumtion står för stora klimatutsläpp. Lova dig själv att genomföra en ”köpfri vecka” under kommande år, där du pausar all shopping utom helt nödvändiga basvaror.",
-      "ifYouWant": "Skriv ”Jag antar utmaningen!” i tråden eller berätta vilken månad du siktar på att genomföra den.",
+      "ifYouWant": "Skriv ”Jag antar utmaningen!” i julkalenderns tråd i Skolkontorets Teams-chatt eller berätta där vilken månad du siktar på att genomföra den.",
       "icon": "lucka-16.svg",
       "iconDescription": "En plånbok sammanbunden med ett grönt sidenband och en grankvist."
     },
@@ -165,7 +165,7 @@
       "day": 21,
       "title": "Skolkontorets gröna idé för nästa år",
       "howTo": "Tänk på hur skolkontoret fungerar i vardagen. Ge ett förslag på en konkret miljöförbättring som arbetsplatsen kan genomföra under nästa år.",
-      "ifYouWant": "Skriv ditt förslag i tråden.",
+      "ifYouWant": "Skriv ditt förslag i julkalenderns tråd i Skolkontorets Teams-chatt.",
       "icon": "lucka-21.svg",
       "iconDescription": "Ett anteckningsblock med en glödlampa och en kontorsbyggnad med solceller på taket."
     },
@@ -173,7 +173,7 @@
       "day": 22,
       "title": "Grönt nyårslöfte & personligt miljömål för 2027",
       "howTo": "Skriv ett grönt nyårslöfte eller sätt upp ett personligt miljömål för 2027 (t.ex. minska matsvinnet, cykla oftare eller konsumera mer återbruk). Välj gärna en hållbar vana du vill testa redan i januari och skriv ner hur du ska lyckas.",
-      "ifYouWant": "Dela ditt löfte eller ditt mål i tråden.",
+      "ifYouWant": "Dela ditt löfte eller ditt mål i julkalenderns tråd i Skolkontorets Teams-chatt.",
       "icon": "lucka-22.svg",
       "iconDescription": "En stjärnhimmel med en spirande grön planta i förgrunden."
     },
@@ -189,7 +189,7 @@
       "day": 24,
       "title": "Skänk omtanke – en gåva utan klimatavtryck",
       "howTo": "Skänk en slant till en miljöorganisation, bjud en ensam granne på fika eller skicka ett omtänksamt sms till någon du inte pratat med på länge.",
-      "ifYouWant": "Önska god jul i tråden när du utfört din handling!",
+      "ifYouWant": "Önska god jul i julkalenderns tråd i Skolkontorets Teams-chatt när du utfört din handling!",
       "icon": "lucka-24.svg",
       "iconDescription": "Ett hjärta format av grankvistar, kottar och lingonris."
     }

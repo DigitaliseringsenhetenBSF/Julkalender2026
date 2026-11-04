@@ -90,6 +90,10 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
   - there is no "in place" counter and no right/wrong announcement;
   - "Pusslet är komplett!" shows only when every piece is unlocked and in place.
 
+- [x] **"Tråden" made explicit:** "julkalenderns tråd i Skolkontorets Teams-chatt" (10 luckor).
+- [x] **`npm run db:seed:all-pieces`** (dev only): unlocks all 45 pieces and adds the test user
+      "Pusseltestare (alla bitar)" with every piece in the trays.
+
 ## Later phases (need decisions or material)
 
 - [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in
