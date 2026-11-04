@@ -55,21 +55,33 @@ Campaign rules are content and live in `content/*.json` (see SPEC §5).
 
 ## Puzzle rendering
 
-- **Pieces:** 24 provided square PNG tiles, 256×256 px with painted jigsaw edges, in a 6 × 4 grid.
-  They render as `<img>` inside absolutely positioned buttons, in one layer that spans trays and
-  board, so a drag can cross areas.
-- **Sizing:** Piece size = board width / columns. The board keeps a 3:2 aspect ratio. Positions are
-  stored normalised (SPEC §5.5) and converted to pixels from measured rectangles
-  (`ResizeObserver`).
-- **Drag:** Pointer Events with `setPointerCapture` and `touch-action: none`.
-  - Drop → find the area under the piece centre → normalise → run the domain `resolveDrop` (snap)
-    → optimistic update → save.
+- **Pieces (since 2026-11-04):** 45 classic jigsaw pieces (9 × 5) cut from "Vinterfest i den
+  snötäckta byn".
+  - `npm run puzzle:cut` builds the outlines with `src/domain/jigsaw.ts`: seeded tabs and
+    blanks; every interior edge is a tab on one side and the matching blank on the other.
+  - It cuts the image in the Chromium that Playwright already installs (canvas clip,
+    `toDataURL('image/webp')`), so no image library is needed.
+  - Output: `assets/puzzle/pieces/bit-NN.webp` (about 570 kB in total) and
+    `content/puzzle-shapes.json`.
+- **Rendering:** each piece is an `<img>` inside a button that is clipped to the piece's outline
+  (`clip-path: url(#…)` with `objectBoundingBox` units). Only the visible piece reacts to the
+  pointer.
+  - The shadow and the focus/selection ring use `filter: drop-shadow`, so they follow the
+    outline.
+  - All pieces sit in one layer that spans trays and board, so a drag can cross areas.
+- **Sizing:** The board has the picture's aspect ratio. Cell size = board size / grid, and the
+  piece box = cell + 2 × pad. Positions are stored normalised (SPEC §5.5) and converted with
+  measured rectangles (`ResizeObserver`).
+- **Drag:** Pointer Events with `setPointerCapture` and `touch-action: none`. On drop the piece
+  stays exactly where it was dropped: no snapping, no locking, no hints (SPEC §5.5).
 - **Saving:** one in-flight request per piece and the latest position wins. Retries use
-  exponential backoff (1 s → 30 s) and show a status line.
-- **Keyboard/click alternative:** select a piece, then a slot button in the 6 × 4 grid (roving
-  focus with the arrow keys).
+  exponential backoff (1 s → 30 s).
+- **Keyboard/click alternative:** select a piece, then a cell in the 9 × 5 grid. The cells are
+  only shown while a piece is selected. The cell is announced, never whether it is right.
 - **Image secrecy:** images are fetched from `/api/pieces/:id/image`, which only answers for
-  unlocked pieces.
+  unlocked pieces. The source image is never served.
+- **Lucka icons:** `assets/icons/lucka-NN.svg`, served from `/icons/`. Each one is drawn as a
+  CSS mask in the current text colour (white on doors, green inside an opened lucka).
 
 ## Date simulation
 

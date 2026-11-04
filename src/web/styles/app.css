@@ -312,7 +312,7 @@ p {
 .puzzle-area {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 3fr 1fr;
+  grid-template-columns: 1fr 4fr 1fr;
   gap: var(--space-3);
   margin-top: var(--space-3);
   container-type: inline-size;
@@ -327,11 +327,11 @@ p {
   background: var(--color-tray);
 }
 
+/* Only the outline of the picture – no grid lines, so the board gives no hints. */
 .board {
   display: grid;
   grid-template-columns: repeat(var(--columns), 1fr);
   grid-template-rows: repeat(var(--rows), 1fr);
-  aspect-ratio: var(--columns) / var(--rows);
   border-radius: var(--radius-s);
   background: var(--color-board);
   box-shadow: inset 0 0 0 2px var(--color-board-edge);
@@ -340,12 +340,13 @@ p {
 .slot {
   margin: 0;
   padding: 0;
-  border: 1px dashed var(--color-slot-line);
-  border-radius: 0;
+  border: 0;
   background: transparent;
 }
 
+/* While a piece is selected the cells become targets (keyboard, click and tap placement). */
 .slot--target {
+  border: 1px dashed var(--color-slot-line);
   cursor: pointer;
 }
 
@@ -381,89 +382,76 @@ p {
   pointer-events: none;
 }
 
+.piece-shapes {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* The box around a jigsaw piece; the shadow follows the piece's own outline. */
 .piece {
   position: absolute;
   top: 0;
   left: 0;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.4));
+  transition: transform 180ms ease;
+  will-change: transform;
+}
+
+/* The clickable part is clipped to the jigsaw outline, so gaps between tabs fall through. */
+.piece__hit {
+  position: absolute;
+  inset: 0;
   padding: 0;
   border: 0;
-  border-radius: 3px;
   background: none;
-  box-shadow: var(--shadow-piece);
   cursor: grab;
   pointer-events: auto;
   touch-action: none;
-  transition:
-    transform 180ms ease,
-    box-shadow 150ms ease;
-  will-change: transform;
+}
+
+.piece__hit:focus {
+  outline: none;
 }
 
 .piece img {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 3px;
   pointer-events: none;
   -webkit-user-drag: none;
 }
 
 .piece--dragging {
-  box-shadow: var(--shadow-lift);
-  cursor: grabbing;
+  filter: drop-shadow(0 10px 12px rgb(0 0 0 / 0.35));
   transition: none;
 }
 
-.piece--dragging img {
-  transform: scale(1.04);
+.piece--dragging .piece__hit {
+  cursor: grabbing;
 }
 
+/* Focus and selection draw a ring around the jigsaw outline (the button itself is clipped). */
+.piece:has(.piece__hit:focus-visible),
 .piece--selected {
-  outline: 4px solid var(--color-focus);
-  outline-offset: 2px;
-  box-shadow: var(--shadow-lift);
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px var(--color-focus))
+    drop-shadow(0 0 2px var(--color-focus)) drop-shadow(0 0 1px var(--color-focus));
 }
 
 .piece--new {
-  box-shadow:
-    0 0 0 3px var(--color-new),
-    var(--shadow-piece);
-}
-
-.piece--placed,
-.piece--placed img {
-  border-radius: 0;
-}
-
-.piece--placed {
-  box-shadow: none;
-  pointer-events: none;
-}
-
-.piece--snapped {
-  animation: snap-glow 800ms ease;
-}
-
-@keyframes snap-glow {
-  0% {
-    filter: brightness(1.4);
-  }
-
-  100% {
-    filter: brightness(1);
-  }
+  filter: drop-shadow(0 0 2px var(--color-new)) drop-shadow(0 0 2px var(--color-new))
+    drop-shadow(0 1px 2px rgb(0 0 0 / 0.4));
 }
 
 .piece__badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--color-accent);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 700;
+  pointer-events: none;
 }
 
 .save-status {
@@ -477,8 +465,8 @@ p {
 
 .luckor {
   display: grid;
-  /* Two doors per row on phones, six on a desktop – like a real Advent calendar. */
-  grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+  /* Wide enough for "Gör så här" texts: three per row on a desktop, one on a phone. */
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: var(--space-3);
   margin: 0;
   padding: 0;
@@ -568,6 +556,36 @@ button.door:hover {
   outline-offset: 3px;
 }
 
+.lucka-icon {
+  display: inline-block;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.door__icon {
+  align-self: center;
+  width: 72px;
+  height: 72px;
+}
+
+.door--locked .door__icon {
+  opacity: 0.45;
+}
+
+.lucka__icon {
+  width: 32px;
+  height: 32px;
+  margin-right: auto;
+  margin-left: var(--space-2);
+  color: var(--color-primary);
+}
+
 .door__day {
   font-size: 2.6rem;
   font-weight: 800;
@@ -633,16 +651,25 @@ button.door:hover {
   margin: 0;
 }
 
+.lucka__label {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
 .lucka__text {
-  flex: 1;
   margin: 0;
   font-size: 0.95rem;
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .lucka__check {
   display: flex;
   align-items: center;
+  margin-top: auto;
   gap: var(--space-2);
   min-height: 44px;
   font-weight: 700;

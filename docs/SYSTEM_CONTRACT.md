@@ -28,7 +28,6 @@ in sync.
 | 404  | `NOT_FOUND`        | Unknown route/resource, piece not (yet) unlocked, dev-auth disabled |
 | 409  | `MISSION_LOCKED`   | Tick-off/un-tick of a lucka that is not open yet                    |
 | 409  | `CAMPAIGN_CLOSED`  | Tick-off/un-tick after `lastTickOffDate`                            |
-| 409  | `PIECE_LOCKED`     | Moving a piece that is already correctly placed                     |
 | 500  | `INTERNAL_ERROR`   | Unexpected server error (details only in server logs)               |
 
 ## Endpoints
@@ -70,8 +69,10 @@ in sync.
       "day": 1,
       "opensOn": "2026-12-01",
       "status": "open",
-      "title": "Uppdrag 1",
-      "description": "…",
+      "title": "Tipsa om ett miljöhack i teamet",
+      "howTo": "Dela ett smart vardagsknep …",
+      "ifYouWant": "Skriv ditt tips i tråden.",
+      "icon": "lucka-01.svg",
       "completed": true,
       "opened": true,
       "completions": 7
@@ -80,8 +81,10 @@ in sync.
       "day": 10,
       "opensOn": "2026-12-10",
       "status": "today",
-      "title": "Uppdrag 10",
-      "description": "…",
+      "title": "Slå in julklapp på alternativt sätt",
+      "howTo": "…",
+      "ifYouWant": "…",
+      "icon": "lucka-10.svg",
       "completed": false,
       "opened": false,
       "completions": 5
@@ -91,7 +94,9 @@ in sync.
       "opensOn": "2026-12-11",
       "status": "locked",
       "title": null,
-      "description": null,
+      "howTo": null,
+      "ifYouWant": null,
+      "icon": "lucka-11.svg",
       "completed": false,
       "opened": false,
       "completions": 0
@@ -102,7 +107,8 @@ in sync.
 
 - `phase` is one of `before | active | catch_up | closed`.
 - `status` is one of `locked | open | today`.
-- Locked luckor always have `title = null` and `description = null`, and they have
+- Locked luckor always have `title`, `howTo` and `ifYouWant` set to `null` (only the
+  decorative `icon` is sent), and they have
   `opened = false` and `completions = 0`.
 - `opened` is `true` once the user has opened the lucka, or if they have ever completed it.
 - `completions` is how many people, the user included, have completed that uppdrag. The UI shows
@@ -176,9 +182,10 @@ positions first.
 
 ```json
 {
-  "grid": { "columns": 6, "rows": 4 },
-  "snapTolerance": 0.35,
-  "totalPieces": 24,
+  "grid": { "columns": 9, "rows": 5 },
+  "imageAspect": 1.7768,
+  "pad": { "x": 0.3, "y": 0.2965 },
+  "totalPieces": 45,
   "pieces": [
     {
       "id": 7,
@@ -186,18 +193,24 @@ positions first.
       "x": 0.42,
       "y": 0.13,
       "z": 3,
-      "placed": false,
       "isNew": true,
-      "alt": "Röd stuga med tomtar och en stege mot taket"
+      "alt": "Solnedgång bakom granarna",
+      "shape": "M 0.2655 0.2635 L 0.3949 0.2635 C … Z"
     }
   ],
+  "complete": false,
   "arrived": 1,
   "firstVisit": false
 }
 ```
 
 - `area` is one of `tray_left | tray_right | board`.
-- Coordinates follow SPEC §5.5.
+- Coordinates follow SPEC §5.5. On the board, `x`/`y` is the cell's top-left. Each piece box
+  extends `pad` (a share of a cell) beyond its cell on every side for the tabs.
+- `shape` is the jigsaw outline as an SVG path in 0–1 units of the piece box. It is meant for
+  `clipPathUnits="objectBoundingBox"`.
+- No per-piece "correct" flag is sent (no hints, SPEC §5.5).
+- `complete` is `true` when every piece is unlocked and lies in its place on this board.
 - `isNew` marks a piece the user has not moved yet (the "Ny" badge).
 - `arrived` is how many pieces this request added to the user's trays, i.e. pieces unlocked since
   the last visit.
@@ -207,17 +220,31 @@ positions first.
 
 Body: `{ "area": "board", "x": 0.33, "y": 0.25 }`.
 
-The server clamps the position, applies the snap rule, clears `isNew` and moves the piece to the
-top of the stack.
+The server:
 
-`200 { "piece": BoardPiece }`. Errors: `400`, `401`, `404` (piece unknown or not unlocked),
-`409 PIECE_LOCKED`.
+- clamps the position to the area, without snapping;
+- records whether the piece now lies in its place;
+- clears `isNew`;
+- moves the piece to the top of the stack.
+
+Any piece can always be moved again.
+
+`200 { "piece": BoardPiece, "complete": false }`. Errors:
+
+- `400` if the body is invalid;
+- `401` without a session;
+- `404` if the piece is unknown or not unlocked.
 
 ### `GET /api/pieces/:id/image`
 
-- `200 image/png` (`Cache-Control: private, max-age=31536000, immutable`) if the piece is
-  collectively unlocked.
+- `200 image/webp` (`Cache-Control: private, max-age=31536000, immutable`) if the piece is
+  collectively unlocked. The image is the jigsaw-cut piece box, transparent outside the outline.
 - Otherwise `404`.
+
+### `GET /icons/:file` (no auth)
+
+`200 image/svg+xml` for a lucka icon from `assets/icons`. The icons are decorative and shown on
+every door.
 
 ### Test only: `POST /api/test/reset` (registered only when `APP_ENV=test`)
 

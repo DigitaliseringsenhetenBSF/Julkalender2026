@@ -16,10 +16,13 @@ export const DEV_USERS = [
 ];
 
 /**
- * Demo data: 59 completions = 3 pieces unlocked (with the default threshold 15), and the next
- * tick-off unlocks the 4th. Handy for trying the unlock moment locally and in e2e tests.
+ * Demo data: one completion short of the 4th piece (39 with the threshold 10), so 3 pieces are
+ * unlocked and the next tick-off unlocks the 4th. Handy for trying the unlock moment locally
+ * and in e2e tests.
  */
-export const DEMO_COMPLETIONS = 59;
+export function demoCompletions(completionsPerPiece: number): number {
+  return 4 * completionsPerPiece - 1;
+}
 
 export function pieceRules(content: Content): PieceRules {
   return {
@@ -31,12 +34,13 @@ export function pieceRules(content: Content): PieceRules {
 async function seedMissions(tx: Queryable, content: Content): Promise<void> {
   for (const mission of content.missions) {
     await tx.query(
-      `INSERT INTO missions (day, title, description) VALUES ($1, $2, $3)
+      `INSERT INTO missions (day, title, how_to, if_you_want, icon) VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (day) DO UPDATE
-       SET title = EXCLUDED.title, description = EXCLUDED.description, updated_at = now()
-       WHERE (missions.title, missions.description)
-             IS DISTINCT FROM (EXCLUDED.title, EXCLUDED.description)`,
-      [mission.day, mission.title, mission.description],
+       SET title = EXCLUDED.title, how_to = EXCLUDED.how_to,
+           if_you_want = EXCLUDED.if_you_want, icon = EXCLUDED.icon, updated_at = now()
+       WHERE (missions.title, missions.how_to, missions.if_you_want, missions.icon)
+             IS DISTINCT FROM (EXCLUDED.title, EXCLUDED.how_to, EXCLUDED.if_you_want, EXCLUDED.icon)`,
+      [mission.day, mission.title, mission.howTo, mission.ifYouWant, mission.icon],
     );
   }
 }
@@ -114,21 +118,22 @@ export function seedBase(
 }
 
 /**
- * Adds demo colleagues and DEMO_COMPLETIONS completions spread over the luckor that are open
+ * Adds demo colleagues and `demoCompletions()` completions spread over the luckor that are open
  * on the given day count. Idempotent. Development/test only.
  */
 export function seedDemo(db: Db, content: Content, openMissions: number): Promise<void> {
   if (openMissions < 1) {
     throw new Error('No luckor are open yet – run with FAKE_TODAY=2026-12-10 (or later).');
   }
-  const colleagues = Math.ceil(DEMO_COMPLETIONS / openMissions);
+  const total = demoCompletions(content.campaign.completionsPerPiece);
+  const colleagues = Math.ceil(total / openMissions);
   return db.transaction(async (tx) => {
     const missions = await tx.query<{ id: number; day: number }>(
       'SELECT id, day FROM missions WHERE day <= $1 ORDER BY day',
       [openMissions],
     );
     let added = 0;
-    for (let c = 1; c <= colleagues && added < DEMO_COMPLETIONS; c++) {
+    for (let c = 1; c <= colleagues && added < total; c++) {
       const [user] = await tx.query<{ id: number }>(
         `INSERT INTO users (external_id, display_name) VALUES ($1, $2)
          ON CONFLICT (external_id) DO UPDATE SET display_name = EXCLUDED.display_name
@@ -136,7 +141,7 @@ export function seedDemo(db: Db, content: Content, openMissions: number): Promis
         [`demo:kollega-${c}`, `Kollega ${c}`],
       );
       for (const mission of missions) {
-        if (added >= DEMO_COMPLETIONS) break;
+        if (added >= total) break;
         await tx.query(
           `INSERT INTO completions (user_id, mission_id) VALUES ($1, $2)
            ON CONFLICT DO NOTHING`,

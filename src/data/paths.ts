@@ -20,4 +20,5 @@ export const ROOT_DIR = findRoot(dirname(fileURLToPath(import.meta.url)));
 export const MIGRATIONS_DIR = join(ROOT_DIR, 'src', 'data', 'migrations');
 export const CONTENT_DIR = join(ROOT_DIR, 'content');
 export const PIECES_DIR = join(ROOT_DIR, 'assets', 'puzzle', 'pieces');
+export const ICONS_DIR = join(ROOT_DIR, 'assets', 'icons');
 export const WEB_DIST_DIR = join(ROOT_DIR, 'dist', 'web');

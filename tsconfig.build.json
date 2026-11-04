@@ -7,5 +7,7 @@
     "lib": ["ES2023"],
     "sourceMap": true
   },
-  "include": ["src/domain", "src/shared", "src/data", "src/api", "scripts"]
+  "include": ["src/domain", "src/shared", "src/data", "src/api", "scripts"],
+  // A dev-time tool that runs browser code in Chromium; type-checked by tsconfig.json (DOM lib).
+  "exclude": ["scripts/cut-puzzle.ts"]
 }

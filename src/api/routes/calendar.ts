@@ -46,9 +46,11 @@ export async function calendarRoutes(app: FastifyInstance, ctx: AppContext): Pro
           day: m.day,
           opensOn: missionOpenDate(m.day, ctx.calendar),
           status,
-          // Locked luckor never reveal their content (SPEC §5.1).
+          // Locked luckor never reveal their texts (SPEC §5.1); the icon decorates every door.
           title: locked ? null : m.title,
-          description: locked ? null : m.description,
+          howTo: locked ? null : m.howTo,
+          ifYouWant: locked ? null : m.ifYouWant,
+          icon: m.icon,
           completed: m.completed,
           // Ticking off a lucka implies it was opened (SPEC §5.2).
           opened: !locked && (m.opened || m.completed),

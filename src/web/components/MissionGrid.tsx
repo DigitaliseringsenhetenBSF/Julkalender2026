@@ -71,6 +71,18 @@ interface LuckaProps {
   headingRef: (el: HTMLHeadingElement | null) => void;
 }
 
+/** The lucka's icon, drawn in the current text colour (the SVG file is used as a mask). */
+function LuckaIcon({ file, className }: { file: string; className: string }) {
+  const url = `url("/icons/${file}")`;
+  return (
+    <span
+      className={`lucka-icon ${className}`}
+      aria-hidden="true"
+      style={{ WebkitMaskImage: url, maskImage: url }}
+    />
+  );
+}
+
 function Lucka({ mission, closed, busy, onOpen, onToggle, headingRef }: LuckaProps) {
   const isToday = mission.status === 'today';
 
@@ -81,6 +93,7 @@ function Lucka({ mission, closed, busy, onOpen, onToggle, headingRef }: LuckaPro
           <span className="door__day" aria-hidden="true">
             {mission.day}
           </span>
+          <LuckaIcon file={mission.icon} className="door__icon" />
           <span className="door__hint">
             <span aria-hidden="true">🔒 </span>
             <span className="visually-hidden">Lucka {mission.day}: </span>
@@ -110,6 +123,7 @@ function Lucka({ mission, closed, busy, onOpen, onToggle, headingRef }: LuckaPro
         {mission.day}
       </span>
       {isToday && <span className="pill pill--today">{sv.missions.today}</span>}
+      <LuckaIcon file={mission.icon} className="door__icon" />
       <span className="door__hint">{sv.missions.open}</span>
       <span className="door__knob" aria-hidden="true" />
     </>
@@ -134,13 +148,21 @@ function Lucka({ mission, closed, busy, onOpen, onToggle, headingRef }: LuckaPro
               <span className="lucka__day" aria-hidden="true">
                 {mission.day}
               </span>
+              <LuckaIcon file={mission.icon} className="lucka__icon" />
               {isToday && <span className="pill pill--today">{sv.missions.today}</span>}
             </div>
             <h3 className="lucka__title" ref={headingRef} tabIndex={-1}>
               <span className="visually-hidden">Lucka {mission.day}: </span>
               {title}
             </h3>
-            <p className="lucka__text">{mission.description}</p>
+            <h4 className="lucka__label">{sv.missions.howTo}</h4>
+            <p className="lucka__text">{mission.howTo}</p>
+            {mission.ifYouWant && (
+              <>
+                <h4 className="lucka__label">{sv.missions.ifYouWant}</h4>
+                <p className="lucka__text">{mission.ifYouWant}</p>
+              </>
+            )}
             <label className="lucka__check">
               <input
                 type="checkbox"

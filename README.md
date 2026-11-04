@@ -14,7 +14,7 @@ The full specification is [docs/SPEC.md](docs/SPEC.md), the living source of tru
 
 > **Status:** working local version with test data.
 >
-> - The 24 uppdrag are placeholders ("Uppdrag 1–24").
+> - The 24 uppdrag come from the campaign owner's document (2026-11-04).
 > - Sign-in is a temporary test-user picker (`AUTH_MODE=dev`), which the server refuses to run in
 >   production.
 
@@ -32,8 +32,8 @@ FAKE_TODAY=2026-12-10 SEED_DEMO=true npm run dev
 Open <http://localhost:5173>, choose a test user and try it out.
 
 - `FAKE_TODAY` makes the server act as if it were that day.
-- `SEED_DEMO` adds 59 demo completions, so 3 pieces are unlocked and the next tick-off unlocks the
-  4th.
+- `SEED_DEMO` adds 39 demo completions (with 10 per piece), so 3 pieces are unlocked and the next
+  tick-off unlocks the 4th.
 
 ## Commands
 
@@ -52,15 +52,16 @@ Open <http://localhost:5173>, choose a test user and try it out.
 | Build                                     | `npm run build`                                                                                        |
 | Start (built app)                         | `npm start`                                                                                            |
 | Smoke verification                        | `npm run smoke -- http://localhost:3000`                                                               |
+| Cut the puzzle into jigsaw pieces         | `npm run puzzle:cut` (only before launch: the shapes must not change afterwards)                       |
 | GDPR purge after the campaign             | `npm run gdpr:purge` (dry run) · `npm run gdpr:purge -- --confirm`                                     |
 | Deploy                                    | Render Blueprint `render.yaml`. Not created yet; needs approval.                                       |
 
 ## Changing content
 
-| What                                    | Where                       | Then                                                                     |
-| --------------------------------------- | --------------------------- | ------------------------------------------------------------------------ |
-| Mission texts                           | `content/missions.json`     | `npm run db:seed`, or restart the server, which applies content on start |
-| Rules (dates, threshold 15, close date) | `content/campaign.json`     | Changing rules after launch is a game-rule change, so ask first          |
-| Puzzle layout and alt texts             | `content/puzzle.json`       | The unlock order is frozen once the first piece is unlocked              |
-| Colours and fonts                       | `src/web/styles/tokens.css` | Placeholders until Lund's graphic profile is provided                    |
-| UI wording                              | `src/web/texts.sv.ts`       | All Swedish texts live in this one file                                  |
+| What                                    | Where                                                | Then                                                                                   |
+| --------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Mission texts and icons                 | `content/missions.json`, `assets/icons/lucka-NN.svg` | `npm run db:seed`, or restart the server, which applies content on start               |
+| Rules (dates, threshold 10, close date) | `content/campaign.json`                              | Changing rules after launch is a game-rule change, so ask first                        |
+| Puzzle image, grid and alt texts        | `assets/puzzle/source/`, `content/puzzle.json`       | Then `npm run puzzle:cut`. The unlock order is frozen once the first piece is unlocked |
+| Colours and fonts                       | `src/web/styles/tokens.css`                          | Placeholders until Lund's graphic profile is provided                                  |
+| UI wording                              | `src/web/texts.sv.ts`                                | All Swedish texts live in this one file                                                |

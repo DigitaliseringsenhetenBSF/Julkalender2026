@@ -4,7 +4,11 @@ export interface MissionRow {
   id: number;
   day: number;
   title: string;
-  description: string;
+  /** "Gör så här" */
+  howTo: string;
+  /** "Om du vill" */
+  ifYouWant: string;
+  icon: string;
 }
 
 /** A mission as seen by one user, with the collective completion count for that uppdrag. */
@@ -19,7 +23,7 @@ export async function listMissionsForUser(
   userId: number,
 ): Promise<UserMissionRow[]> {
   return db.query<UserMissionRow>(
-    `SELECT m.id, m.day, m.title, m.description,
+    `SELECT m.id, m.day, m.title, m.how_to AS "howTo", m.if_you_want AS "ifYouWant", m.icon,
             EXISTS (SELECT 1 FROM completions c
                     WHERE c.mission_id = m.id AND c.user_id = $1) AS completed,
             EXISTS (SELECT 1 FROM lucka_openings o

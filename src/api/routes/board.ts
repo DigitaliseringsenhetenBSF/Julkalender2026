@@ -2,26 +2,39 @@ import { createReadStream } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { resolveDrop } from '../../domain/board.ts';
-import { findUnlockedPieceImage, getBoard, movePiece } from '../../data/board.ts';
+import { type BoardPiece, findUnlockedPieceImage, getBoard, movePiece } from '../../data/board.ts';
 import { PIECES_DIR } from '../../data/paths.ts';
-import { type BoardResponse, movePieceRequest, pieceIdParams } from '../../shared/contract.ts';
+import {
+  type ApiBoardPiece,
+  type BoardResponse,
+  movePieceRequest,
+  pieceIdParams,
+} from '../../shared/contract.ts';
 import { currentUser } from '../auth/session.ts';
 import type { AppContext } from '../context.ts';
 import { ApiError, parseInput } from '../errors.ts';
 
 export async function boardRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
-  const grid = { columns: ctx.content.puzzle.columns, rows: ctx.content.puzzle.rows };
-  const tolerance = ctx.content.puzzle.snapTolerance;
+  const { puzzle } = ctx.content;
+  const grid = { columns: puzzle.columns, rows: puzzle.rows };
+  const shapeById = new Map(puzzle.pieces.map((p) => [p.id, p.shape]));
+  // Shapes only travel with pieces that are on the user's board, i.e. already unlocked.
+  const withShape = (piece: BoardPiece): ApiBoardPiece => ({
+    ...piece,
+    shape: shapeById.get(piece.id) ?? '',
+  });
 
   // Always the caller's own board: the user id comes from the session, never the request.
   app.get('/api/board', async (request): Promise<BoardResponse> => {
     const user = currentUser(request);
-    const board = await getBoard(ctx.db, user.id, ctx.random);
+    const board = await getBoard(ctx.db, user.id, ctx.random, ctx.rules.totalPieces);
     return {
       grid,
-      snapTolerance: tolerance,
+      imageAspect: puzzle.imageAspect,
+      pad: puzzle.pad,
       totalPieces: ctx.rules.totalPieces,
-      pieces: board.pieces,
+      pieces: board.pieces.map(withShape),
+      complete: board.complete,
       arrived: board.arrived,
       firstVisit: board.firstVisit,
     };
@@ -31,16 +44,14 @@ export async function boardRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const user = currentUser(request);
     const { id } = parseInput(pieceIdParams, request.params);
     const drop = parseInput(movePieceRequest, request.body);
-    // The server is authoritative for snapping; the client runs the same rule for feedback.
-    const resolved = resolveDrop(id, drop, grid, tolerance);
-    const result = await movePiece(ctx.db, user.id, id, resolved);
+    // No snapping: the piece stays where it was dropped; the server only records whether it
+    // now lies in its place, which decides when the puzzle is complete.
+    const resolved = resolveDrop(id, drop, grid, puzzle.correctTolerance);
+    const result = await movePiece(ctx.db, user.id, id, resolved, ctx.rules.totalPieces);
     if (result.status === 'not_found') {
       throw new ApiError(404, 'NOT_FOUND', `Piece ${id} is not on your board`);
     }
-    if (result.status === 'locked') {
-      throw new ApiError(409, 'PIECE_LOCKED', `Piece ${id} is already in place`);
-    }
-    return { piece: result.piece };
+    return { piece: withShape(result.piece), complete: result.complete };
   });
 
   // Piece images are only served once collectively unlocked, so the picture stays a surprise.
@@ -49,7 +60,7 @@ export async function boardRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const file = await findUnlockedPieceImage(ctx.db, id);
     if (!file) throw new ApiError(404, 'NOT_FOUND', 'Piece not found');
     return reply
-      .type('image/png')
+      .type('image/webp')
       .header('Cache-Control', 'private, max-age=31536000, immutable')
       .send(createReadStream(join(PIECES_DIR, basename(file))));
   });

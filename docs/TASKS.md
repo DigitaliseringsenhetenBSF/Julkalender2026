@@ -73,6 +73,23 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
       "Om dina uppgifter" is a small expandable footer link. Today's lucka is ticked off in the
       grid.
 
+## Phase 6 – Real content and a real jigsaw (2026-11-04)
+
+- [x] **The 24 uppdrag from "24 uppdrag.docx"** in `content/missions.json`, with title, "Gör så
+      här", "Om du vill" and an icon (migration 003).
+- [x] **24 lucka icons** (simple line icons) in `assets/icons`, shown on every door and inside
+      opened luckor.
+- [x] **45 classic jigsaw pieces** cut from Vinterfest (`npm run puzzle:cut`). AC:
+  - outlines interlock;
+  - only the visible piece reacts to the pointer;
+  - the source image is never served.
+- [x] **Threshold 10 completions per piece.**
+- [x] **No help in the puzzle.** AC:
+  - a piece dropped next to its slot stays where it was dropped;
+  - nothing locks;
+  - there is no "in place" counter and no right/wrong announcement;
+  - "Pusslet är komplett!" shows only when every piece is unlocked and in place.
+
 ## Later phases (need decisions or material)
 
 - [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in

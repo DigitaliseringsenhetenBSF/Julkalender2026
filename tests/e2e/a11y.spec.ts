@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type Page, expect, test } from '@playwright/test';
-import { loosePieces, resetDatabase, signIn } from './helpers.ts';
+import { pieces, resetDatabase, signIn } from './helpers.ts';
 
 /** Fails on serious or critical WCAG 2.1 A/AA violations (SPEC §10). */
 async function expectNoSeriousViolations(page: Page) {
@@ -31,7 +31,7 @@ test('sign-in page has no serious accessibility violations', async ({ page }) =>
 
 test('calendar page has no serious accessibility violations', async ({ page }) => {
   await signIn(page);
-  await expect(loosePieces(page)).toHaveCount(3);
+  await expect(pieces(page)).toHaveCount(3);
   await expectNoSeriousViolations(page);
 });
 
@@ -45,7 +45,7 @@ test('opened luckor have no serious accessibility violations', async ({ page }) 
 
 test('puzzle selection mode has no serious accessibility violations', async ({ page }) => {
   await signIn(page);
-  await loosePieces(page).first().focus();
+  await pieces(page).first().focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Rad 1, kolumn 1' })).toBeFocused();
   await expectNoSeriousViolations(page);

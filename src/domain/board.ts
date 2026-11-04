@@ -1,5 +1,6 @@
 /**
- * Puzzle board geometry: correct slots, snapping, clamping and initial tray placement.
+ * Puzzle board geometry: correct slots, the "in its place" check, clamping and initial tray
+ * placement. There is deliberately no snapping (SPEC §5.5).
  * See docs/SPEC.md §5.5.
  *
  * Coordinate model (independent of screen size):
@@ -66,11 +67,11 @@ export function clampPosition(position: PiecePosition, grid: Grid): PiecePositio
 }
 
 /**
- * Snap rule: a piece dropped on the board whose top-left lies within `tolerance` piece widths
- * (horizontally) and piece heights (vertically) of its correct slot snaps exactly onto it.
- * Distances are measured in piece units so the rule is the same on every screen size.
+ * A piece counts as correctly placed when its cell origin lies within `tolerance` cell widths
+ * (horizontally) and cell heights (vertically) of its slot. Measured in cell units so the rule
+ * is the same on every screen size. There is no snapping: this only decides completion.
  */
-export function isWithinSnap(
+export function isCorrectlyPlaced(
   pieceId: number,
   x: number,
   y: number,
@@ -83,7 +84,11 @@ export function isWithinSnap(
   return dxInPieces <= tolerance && dyInPieces <= tolerance;
 }
 
-/** Where a dropped piece ends up, and whether it is now correctly placed. */
+/**
+ * Where a dropped piece ends up: exactly where it was dropped (kept inside its area). The
+ * puzzle gives no help – nothing snaps or locks (decided 2026-11-04). `placed` records whether
+ * it now lies close enough to its slot, which only decides when the puzzle is complete.
+ */
 export function resolveDrop(
   pieceId: number,
   drop: PiecePosition,
@@ -91,11 +96,9 @@ export function resolveDrop(
   tolerance: number,
 ): ResolvedPosition {
   const clamped = clampPosition(drop, grid);
-  if (clamped.area === 'board' && isWithinSnap(pieceId, clamped.x, clamped.y, grid, tolerance)) {
-    const origin = slotOrigin(correctSlot(pieceId, grid), grid);
-    return { area: 'board', x: origin.x, y: origin.y, placed: true };
-  }
-  return { ...clamped, placed: false };
+  const placed =
+    clamped.area === 'board' && isCorrectlyPlaced(pieceId, clamped.x, clamped.y, grid, tolerance);
+  return { ...clamped, placed };
 }
 
 /**

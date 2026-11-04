@@ -13,7 +13,7 @@ Last updated: 2026-11-03
 Miljöjulkalendern is a web-based Advent calendar for the staff of **Skolkontoret** at
 **Barn- och skolförvaltningen (BSF), Lunds kommun**, used 1–24 December 2026. Each day opens one
 **miljöuppdrag** (an environmental mission). Staff tick off the missions they have completed. All
-completions are pooled, and every 15 completions unlock one **pusselbit** of a shared picture.
+completions are pooled, and every 10 completions unlock one **pusselbit** of a shared picture.
 Each person assembles **pusslet** on their own board, and the board is saved server-side.
 
 Product thesis: small individual actions become meaningful when they visibly add up.
@@ -36,14 +36,15 @@ Product thesis: small individual actions become meaningful when they visibly add
      the uppdrag, and it stays open from then on.
    - The user ticks "Gjort" in the lucka.
    - Each opened lucka shows how many colleagues have done that uppdrag.
-   - If the total crosses a multiple of 15, a new pusselbit appears in a tray with a short,
+   - If the total crosses a multiple of 10, a new pusselbit appears in a tray with a short,
      non-intrusive message.
 3. **Catch-up:** The user opens and ticks off several earlier luckor in the lucka grid, until
    the close date (2027-01-10). The intro text states the close date.
 4. **Puzzle play:**
    - The user drags pieces from the trays to the board, or uses the keyboard to pick a piece and
      choose a slot.
-   - A piece placed in the correct slot snaps and locks.
+   - Pieces stay exactly where they are put. Nothing snaps or locks and there are no hints – it
+     is solved like a real jigsaw (decided 2026-11-04).
    - Every move is saved automatically.
 5. **New pieces after absence:** Pieces unlocked by colleagues appear in the trays at stored
    random positions, marked "Ny".
@@ -60,7 +61,7 @@ Product thesis: small individual actions become meaningful when they visibly add
 - [ ] Earlier uppdrag can be ticked off until the close date. Future uppdrag never can (enforced by
       the API).
 - [ ] `total completions = count(distinct (user, uppdrag))`.
-- [ ] `unlocked pieces = max(high-water mark, min(floor(total / 15), 24))`, and it never decreases.
+- [ ] `unlocked pieces = max(high-water mark, min(floor(total / 10), 45))`, and it never decreases.
 - [ ] Placed pieces are exactly where the user left them, on any device.
 - [ ] Individual and collective statistics are consistent with the data.
 - [ ] The puzzle is fully usable with keyboard only and with a screen reader.
@@ -71,16 +72,17 @@ Product thesis: small individual actions become meaningful when they visibly add
 
 All values live in `content/campaign.json` and `content/puzzle.json`. They are not hard-coded.
 
-| Name                                          | Value                                                   | Source                                          |
-| --------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------- |
-| `timezone` (CAMPAIGN_TIMEZONE)                | `Europe/Stockholm`                                      | campaign.json                                   |
-| `firstMissionDate` (CAMPAIGN_START)           | `2026-12-01`                                            | campaign.json                                   |
-| `totalMissions` (TOTAL_MISSIONS)              | `24`                                                    | campaign.json                                   |
-| `lastTickOffDate` (CAMPAIGN_CLOSE_DATE)       | `2027-01-10` (last day on which tick-offs are accepted) | campaign.json, decided 2026-11-03               |
-| `completionsPerPiece` (COMPLETIONS_PER_PIECE) | `15`                                                    | campaign.json                                   |
-| `columns` × `rows`                            | 6 × 4 = 24 pieces (PUZZLE_PIECE_COUNT)                  | puzzle.json **[observed from provided images]** |
-| `snapTolerance` (SNAP_TOLERANCE)              | `0.35` of a piece's width/height                        | puzzle.json                                     |
-| `unlockSeed`                                  | `20261201`                                              | puzzle.json                                     |
+| Name                                          | Value                                                                                                          | Source                            |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `timezone` (CAMPAIGN_TIMEZONE)                | `Europe/Stockholm`                                                                                             | campaign.json                     |
+| `firstMissionDate` (CAMPAIGN_START)           | `2026-12-01`                                                                                                   | campaign.json                     |
+| `totalMissions` (TOTAL_MISSIONS)              | `24`                                                                                                           | campaign.json                     |
+| `lastTickOffDate` (CAMPAIGN_CLOSE_DATE)       | `2027-01-10` (last day on which tick-offs are accepted)                                                        | campaign.json, decided 2026-11-03 |
+| `completionsPerPiece` (COMPLETIONS_PER_PIECE) | `10` (450 completions for the whole picture)                                                                   | campaign.json, decided 2026-11-04 |
+| `columns` × `rows`                            | 9 × 5 = 45 classic jigsaw pieces (PUZZLE_PIECE_COUNT), cut from "Vinterfest i den snötäckta byn"               | puzzle.json, decided 2026-11-04   |
+| `correctTolerance`                            | `0.2` of a cell – how close a piece must lie to count as in its place (only decides completion; nothing snaps) | puzzle.json                       |
+| `cutSeed`                                     | `20261224` – fixes the piece shapes (`npm run puzzle:cut`)                                                     | puzzle.json                       |
+| `unlockSeed`                                  | `20261201`                                                                                                     | puzzle.json                       |
 
 ### 5.1 Time and unlocking ("the server owns time")
 
@@ -96,7 +98,8 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
   | `catch_up` | 2026-12-25 … 2027-01-10 | all 24                                                                                                                                           |
   | `closed`   | today > 2027-01-10      | tick-offs and un-ticks rejected (`CAMPAIGN_CLOSED`); calendar, statistics and puzzle stay viewable and the puzzle stays playable until the purge |
 
-- A lucka that is not open never sends its title or description to the client.
+- A lucka that is not open never sends its title, "Gör så här" or "Om du vill" to the client.
+  Its icon is sent and shown on the closed door (decorative).
 - December has no DST transition in Stockholm (UTC+1 throughout), but the conversion is
   zone-correct in any case.
 
@@ -133,8 +136,8 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
   is exact.
 - Pieces are **monotonic**: un-ticks never lower the high-water mark.
 - "Uppdrag kvar till nästa pusselbit" = `(unlocked + 1) × completionsPerPiece − total`. This can
-  exceed 15 after un-ticks. It is `0` once all pieces are unlocked.
-- **End state:** all 24 unlocked → "Pusslet är komplett!" (shown once the user has also placed
+  exceed the threshold after un-ticks. It is `0` once all pieces are unlocked.
+- **End state:** all 45 unlocked → "Pusslet är komplett!" (shown once the user has also placed
   them all). Further completions are still recorded and counted, without errors.
 
 ### 5.4 Deterministic unlock order
@@ -161,13 +164,20 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
   creates one in the tray with fewer loose pieces (ties at random), at a random position
   ("huller om buller"), with `is_new = true`. It is stored immediately so it does not jump on
   reload (`ON CONFLICT DO NOTHING` handles parallel tabs).
-- **Snap:**
-  - A piece dropped on the board with its top-left within `snapTolerance` piece-widths
-    horizontally and piece-heights vertically of its correct slot snaps to the slot exactly and
-    becomes `placed = true`.
-  - Placed pieces are locked and cannot be moved (`409 PIECE_LOCKED`).
-  - Otherwise the piece stays where it was dropped (free placement on board or tray).
-  - The server is authoritative; the client runs the same domain function for instant feedback.
+- **No help (decided 2026-11-04):**
+  - A dropped piece stays exactly where it was dropped, clamped to its area. Nothing snaps,
+    nothing locks, and every piece can always be moved again.
+  - The UI shows no "x of 45 in place" counter, no right/wrong message and no grid lines on the
+    board. Keyboard placement announces only the cell the piece now lies on.
+  - The server stores `placed` = the cell origin lies within `correctTolerance` of its slot. It
+    is used only for "Pusslet är komplett!" (every piece unlocked and in place) and is never
+    sent per piece.
+- **Shapes:**
+  - Pieces are classic jigsaw pieces with tabs and blanks, cut by `npm run puzzle:cut` from
+    `assets/puzzle/source/vinterfest.png` into transparent WebP images.
+  - Each piece box is its cell plus `pad` on every side.
+  - The outline is also sent as an SVG path (`shape`). The UI clips the piece's button to it, so
+    only the visible piece reacts to the pointer, and the focus ring follows the outline.
 - Moving a piece clears `is_new`.
 - Pieces have no rotation.
 - A user can only read and write their own board: rows are keyed by the session user and there
@@ -177,7 +187,7 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
 
 - Piece images are served only via `GET /api/pieces/:id/image`, and only once that piece is
   collectively unlocked (otherwise `404`).
-- The answer image (`facit`) is never served.
+- The whole source image (`assets/puzzle/source/`) is never served.
 - Locked pieces' alt texts are never sent.
 
 ## 6. Statistics (definitions)
@@ -208,7 +218,7 @@ No per-person data about anyone else is ever shown, only counts. There is no lea
 | Table               | Columns                                                                                                          | Notes                                          |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | `users`             | `id`, `external_id` (unique, from the identity provider), `display_name`, `role` (`user`\|`admin`), `created_at` |                                                |
-| `missions`          | `id`, `day` (1–24, unique), `title`, `description`, `updated_at`                                                 |                                                |
+| `missions`          | `id`, `day` (1–24, unique), `title`, `how_to` ("Gör så här"), `if_you_want` ("Om du vill"), `icon`, `updated_at` | migration 003                                  |
 | `completions`       | `user_id`, `mission_id`, `completed_at`                                                                          | PK `(user_id, mission_id)`                     |
 | `puzzle_pieces`     | `id` (1–24), `grid_row`, `grid_col`, `unlock_rank` (unique), `image_file`, `alt_text`                            |                                                |
 | `campaign_state`    | singleton `id = 1`, `unlocked_pieces`, `updated_at`                                                              |                                                |
@@ -225,8 +235,10 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
   - DB: completions, high-water mark, board state, users, missions after seed.
   - `content/*.json`: rules, puzzle layout, unlock seed, alt texts and mission texts until the
     admin UI exists.
-  - `assets/puzzle/pieces/*.png`: the provided pieces.
-- **Generated:** `dist/` (frontend bundle and compiled server), the HTTP responses' derived
+  - `assets/puzzle/source/vinterfest.png`: the puzzle image provided by the campaign owner.
+  - `assets/icons/lucka-NN.svg`: the lucka icons.
+- **Generated:** `assets/puzzle/pieces/bit-NN.webp` and `content/puzzle-shapes.json` (by
+  `npm run puzzle:cut`), `dist/` (frontend bundle and compiled server), the HTTP responses' derived
   statistics, and `campaign_summary`.
 
 **Applying content:**
@@ -281,13 +293,17 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 - **Keyboard puzzle:**
   - Each loose piece is a button.
-  - Enter/Space picks it up; focus moves to the 6 × 4 slot grid.
+  - Enter/Space picks it up; focus moves to the 9 × 5 grid of cells.
   - Arrow keys move between slots ("Rad 2, kolumn 3"). Enter/Space places the piece and Escape
     cancels.
   - Clicking or tapping works the same way, so dragging is never required.
 - **Screen readers:**
   - Pieces have Swedish alt texts (`puzzle.json`).
-  - Moves, snaps, unlocks and save errors are announced in an `aria-live` region.
+  - Moves ("Biten ligger nu på rad 2, kolumn 3"), unlocks and save errors are announced in an
+    `aria-live` region.
+  - Whether a piece is right is never announced (no help, §5.5). This makes the puzzle hard
+    without sight, but the per-piece alt texts make it possible to reason about where a piece
+    belongs. An optional help mode for screen-reader users can be added if needed (Q24).
 - **Motion and contrast:** `prefers-reduced-motion` disables animations. Contrast ≥ 4.5:1 for text.
 - **Zoom:** Layout works at 200 % zoom and 375 px width.
 - **Testing:** automated axe checks in e2e (no serious/critical issues), plus a manual checklist
@@ -299,8 +315,11 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 - Lunds kommuns grafiska profil is **[unknown]**: no assets have been provided yet (Q19).
 - Colours and fonts are placeholders in `src/web/styles/tokens.css` (system font stack, neutral
   festive palette). No logo is used.
-- The bundled puzzle image was provided by the campaign owner. Usage rights are **[unknown]**, to
-  be confirmed (Q14).
+- The puzzle image "Vinterfest i den snötäckta byn" was provided by the campaign owner. Usage
+  rights are **[unknown]**, to be confirmed (Q14).
+- **Lucka icons** are simple line icons drawn for the project from the campaign owner's icon
+  descriptions (`assets/icons`). The CSS uses each one as a mask, so it takes the door's text
+  colour. They can be replaced with illustrations by swapping the SVG files (Q23).
 
 ## 12. Non-goals
 
@@ -337,30 +356,32 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 14. Open questions
 
-| #   | Question                                                         | Default / proposal                                                                                                                                                          | Owner                | Status                       |
-| --- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------- |
-| Q1  | How do users sign in?                                            | Microsoft Entra ID (M365 SSO). Fallback if IT lead time is too long: personal magic links by e-mail.                                                                        | Campaign owner + IT  | **Open – deferred by owner** |
-| Q2  | Who counts as Skolkontoret staff, and how many?                  | ~30–60 participants                                                                                                                                                         | Campaign owner       | Answered (approx.)           |
-| Q3  | Who is admin, and how do they sign in?                           | Digitaliseringsenheten; same sign-in + `role = admin`                                                                                                                       | Campaign owner       | Open                         |
-| Q4  | Piece count / threshold                                          | 24 pieces (provided) × 15 = 360 completions. With 30–60 people at ~40 % → complete ~15 Dec – early Jan, ~20 Dec at 45 people. Keep 15; recalibrate before launch if needed. | Campaign owner       | Decided (default 15)         |
-| Q5  | All pieces unlocked before 24 Dec / far from complete on 24 Dec? | Completed picture + "Pusslet är komplett!"; catch-up until 10 Jan helps a slow start.                                                                                       | Campaign owner       | Proposed                     |
-| Q6  | Un-tick allowed?                                                 | Yes; pieces stay                                                                                                                                                            | Campaign owner       | **Decided 2026-11-03**       |
-| Q7  | Cut-off for catch-up                                             | Through 2027-01-10                                                                                                                                                          | Campaign owner       | **Decided 2026-11-03**       |
-| Q8  | Uppdrag on weekends too?                                         | Yes, all 24 days                                                                                                                                                            | Campaign owner       | Assumed                      |
-| Q9  | Piece shape                                                      | Provided pieces are square tiles with painted jigsaw edges, drawn as squares                                                                                                | –                    | Decided by assets            |
-| Q10 | Snap/free placement/rotation                                     | Snap to correct slot and lock; free placement elsewhere; no rotation                                                                                                        | Campaign owner       | Proposed                     |
-| Q11 | New-piece indicators / celebration                               | "Ny" badge + short message; no animation with reduced motion                                                                                                                | Campaign owner       | Proposed                     |
-| Q12 | Who writes the 24 uppdrag?                                       | Campaign owner will describe them; placeholders "Uppdrag 1–24" until then                                                                                                   | Campaign owner       | **Decided 2026-11-03**       |
-| Q13 | Uppdrag fields                                                   | Title + short description (a "why it matters" field can be added)                                                                                                           | Campaign owner       | Proposed                     |
-| Q14 | Puzzle image rights                                              | Image provided by campaign owner; rights to be confirmed                                                                                                                    | Campaign owner       | Open                         |
-| Q15 | Which statistics?                                                | As §6; no per-person data to others                                                                                                                                         | Campaign owner       | Proposed                     |
-| Q16 | GDPR legal basis, info text, retention                           | Purge by 2027-01-31; keep anonymous aggregates                                                                                                                              | Campaign owner + DSO | Open                         |
-| Q17 | Standalone Render service or verktygsportal page?                | Standalone service (deadline, separate auth)                                                                                                                                | Campaign owner       | Proposed                     |
-| Q18 | URL/domain                                                       | `*.onrender.com` unless a lund.se subdomain is required                                                                                                                     | Campaign owner + IT  | Open                         |
-| Q19 | Lund graphic profile assets                                      | Needed (colours, fonts, logo usage)                                                                                                                                         | Campaign owner       | Open                         |
-| Q20 | Big-screen "tillsammans" view?                                   | Not in this increment                                                                                                                                                       | Campaign owner       | Open                         |
-| Q21 | Tillgänglighetsredogörelse                                       | Probably required under DOS-lagen                                                                                                                                           | Campaign owner       | Open                         |
-| Q22 | "Vinterfest i den snötäckta byn" image                           | Not used                                                                                                                                                                    | Campaign owner       | **Decided 2026-11-03**       |
+| #   | Question                                                         | Default / proposal                                                                                                                                                      | Owner                | Status                       |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------- |
+| Q1  | How do users sign in?                                            | Microsoft Entra ID (M365 SSO). Fallback if IT lead time is too long: personal magic links by e-mail.                                                                    | Campaign owner + IT  | **Open – deferred by owner** |
+| Q2  | Who counts as Skolkontoret staff, and how many?                  | ~30–60 participants                                                                                                                                                     | Campaign owner       | Answered (approx.)           |
+| Q3  | Who is admin, and how do they sign in?                           | Digitaliseringsenheten; same sign-in + `role = admin`                                                                                                                   | Campaign owner       | Open                         |
+| Q4  | Piece count / threshold                                          | 45 pieces (9 × 5) × 10 = 450 completions. With 30–60 people at ~40 % → roughly 290–580 completions, so the picture may be completed close to 24 Dec or during catch-up. | Campaign owner       | **Decided 2026-11-04**       |
+| Q5  | All pieces unlocked before 24 Dec / far from complete on 24 Dec? | Completed picture + "Pusslet är komplett!"; catch-up until 10 Jan helps a slow start.                                                                                   | Campaign owner       | Proposed                     |
+| Q6  | Un-tick allowed?                                                 | Yes; pieces stay                                                                                                                                                        | Campaign owner       | **Decided 2026-11-03**       |
+| Q7  | Cut-off for catch-up                                             | Through 2027-01-10                                                                                                                                                      | Campaign owner       | **Decided 2026-11-03**       |
+| Q8  | Uppdrag on weekends too?                                         | Yes, all 24 days                                                                                                                                                        | Campaign owner       | Assumed                      |
+| Q9  | Piece shape                                                      | Classic jigsaw pieces (tabs and blanks) cut from the Vinterfest image                                                                                                   | Campaign owner       | **Decided 2026-11-04**       |
+| Q10 | Snap/free placement/rotation                                     | No snapping, no locking, no hints; free placement; no rotation                                                                                                          | Campaign owner       | **Decided 2026-11-04**       |
+| Q11 | New-piece indicators / celebration                               | "Ny" badge + short message; no animation with reduced motion                                                                                                            | Campaign owner       | Proposed                     |
+| Q12 | Who writes the 24 uppdrag?                                       | Campaign owner – delivered in "24 uppdrag.docx"                                                                                                                         | Campaign owner       | **Delivered 2026-11-04**     |
+| Q13 | Uppdrag fields                                                   | Title, "Gör så här", "Om du vill" and an icon                                                                                                                           | Campaign owner       | **Decided 2026-11-04**       |
+| Q14 | Puzzle image rights                                              | Image provided by campaign owner; rights to be confirmed                                                                                                                | Campaign owner       | Open                         |
+| Q15 | Which statistics?                                                | As §6; no per-person data to others                                                                                                                                     | Campaign owner       | Proposed                     |
+| Q16 | GDPR legal basis, info text, retention                           | Purge by 2027-01-31; keep anonymous aggregates                                                                                                                          | Campaign owner + DSO | Open                         |
+| Q17 | Standalone Render service or verktygsportal page?                | Standalone service (deadline, separate auth)                                                                                                                            | Campaign owner       | Proposed                     |
+| Q18 | URL/domain                                                       | `*.onrender.com` unless a lund.se subdomain is required                                                                                                                 | Campaign owner + IT  | Open                         |
+| Q19 | Lund graphic profile assets                                      | Needed (colours, fonts, logo usage)                                                                                                                                     | Campaign owner       | Open                         |
+| Q20 | Big-screen "tillsammans" view?                                   | Not in this increment                                                                                                                                                   | Campaign owner       | Open                         |
+| Q21 | Tillgänglighetsredogörelse                                       | Probably required under DOS-lagen                                                                                                                                       | Campaign owner       | Open                         |
+| Q22 | "Vinterfest i den snötäckta byn" image                           | Used as the puzzle (replaces the 24 provided tiles)                                                                                                                     | Campaign owner       | **Decided 2026-11-04**       |
+| Q23 | Lucka icons                                                      | Simple drawn line icons for now; replace with illustrations from the descriptions if wanted                                                                             | Campaign owner       | Decided (interim)            |
+| Q24 | Help mode for screen-reader users in the puzzle?                 | Not now; consider if the pilot shows a need                                                                                                                             | Campaign owner       | Open                         |
 
 ## 15. Decisions log
 
@@ -369,11 +390,15 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 | 2026-11-03 | Stack: TypeScript, Fastify, zod, PostgreSQL (PGlite locally), React + Vite, Vitest, Playwright                           | One language, boring tech, no Docker needed locally     | Python/FastAPI; verktygsportal module              |
 | 2026-11-03 | Plain SQL + small adapter, numbered migrations                                                                           | Auditable, no ORM to learn                              | Drizzle, Kysely                                    |
 | 2026-11-03 | Temporary `AUTH_MODE=dev`, refused in production                                                                         | Owner deferred sign-in; never bypass auth in production | Shared campaign code                               |
-| 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces                                                      | Owner answers                                           | –                                                  |
-| 2026-11-03 | Piece images gated by unlock; facit never served                                                                         | Keep the picture a surprise                             | Serve all statically                               |
+| 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces (threshold and pieces changed 2026-11-04)            | Owner answers                                           | –                                                  |
+| 2026-11-03 | Piece images gated by unlock; the source image is never served                                                           | Keep the picture a surprise                             | Serve all statically                               |
 | 2026-11-03 | Luckor are doors that turn over and stay open (server-stored); per-uppdrag counts on each lucka; per-lucka chart removed | Campaign owner's request                                | Plain list with checkboxes; client-only open state |
 | 2026-11-03 | Clean page: remove the "Dagens uppdrag", "Tillsammans" and Statistik cards; privacy text becomes a discreet footer link  | Campaign owner wants a stilren service                  | Keep the cards                                     |
-| 2026-11-03 | Snapped pieces lock                                                                                                      | Prevents accidental moves; simpler keyboard model       | Movable after snap                                 |
+| 2026-11-03 | ~~Snapped pieces lock~~ – replaced 2026-11-04 by "no help"                                                               | –                                                       | –                                                  |
+| 2026-11-04 | Missions from "24 uppdrag.docx": title, Gör så här, Om du vill, icon (migration 003)                                     | Owner's content                                         | –                                                  |
+| 2026-11-04 | Puzzle: 45 classic jigsaw pieces (9 × 5) from Vinterfest, cut in Chromium by a script (no new dependency)                | Owner's request; 40–70 pieces                           | Pillow/sharp; 60 or 66 pieces                      |
+| 2026-11-04 | Threshold 10 completions per piece                                                                                       | Owner's choice                                          | Keep 15; ~8 (360 total)                            |
+| 2026-11-04 | No snapping, locking or hints in the puzzle                                                                              | Owner: the builder gets no help                         | Snap to slot                                       |
 
 ## 16. Engineering conventions (the six core areas)
 

@@ -70,30 +70,26 @@ export const sv = {
 
   puzzle: {
     heading: 'Pusslet',
-    lead: 'Dra bitarna från lådorna till rätt plats på bordet. Du kan också välja en bit och sedan en ruta – med mus, finger eller tangentbord.',
+    lead: 'Dra bitarna från lådorna till bordet och lägg pusslet – utan hjälp, precis som ett riktigt pussel. Du kan också välja en bit och sedan en ruta – med mus, finger eller tangentbord.',
     keyboardHelp:
-      'Tangentbord: tabba till en bit och tryck Enter. Flytta mellan rutorna med piltangenterna och tryck Enter för att lägga biten. Escape avbryter.',
+      'Tangentbord: tabba till en bit och tryck Enter. Flytta mellan rutorna med piltangenterna och tryck Enter för att lägga biten där. Escape avbryter.',
     empty: (perPiece: number) =>
       `Inga pusselbitar är upplåsta än. Den första kommer efter ${perPiece} avklarade uppdrag!`,
     trayLeft: 'Vänster låda',
     trayRight: 'Höger låda',
-    board: (placed: number, total: number) => `Pusselbord, ${placed} av ${total} bitar på plats`,
+    board: 'Pusselbord',
     where: {
       tray_left: 'i vänster låda',
       tray_right: 'i höger låda',
-      board: 'på bordet, inte på rätt plats än',
+      board: 'på bordet',
     },
     pieceLabel: (alt: string, where: string, isNew: boolean) =>
       `Pusselbit: ${alt}, ${where}${isNew ? '. Ny!' : ''}`,
     slotLabel: (row: number, col: number) => `Rad ${row}, kolumn ${col}`,
-    slotFilled: 'redan lagd',
     picked: (alt: string) =>
       `Du har valt biten ${alt}. Välj en ruta med piltangenterna och tryck Enter. Escape avbryter.`,
     cancelled: 'Valet avbröts.',
-    snapped: (alt: string) => `Rätt! Biten ${alt} sitter nu på plats.`,
-    notHere: 'Biten passar inte där. Den ligger kvar på bordet – prova en annan ruta.',
-    slotTaken: 'Den rutan är redan lagd. Välj en annan.',
-    moved: 'Biten är flyttad.',
+    movedTo: (row: number, col: number) => `Biten ligger nu på rad ${row}, kolumn ${col}.`,
     newBadge: 'Ny',
     newPieces: (n: number) =>
       plural(n, 'En ny pusselbit har låsts upp!', `${n} nya pusselbitar har låsts upp!`),
@@ -111,10 +107,7 @@ export const sv = {
       ),
     saving: 'Sparar …',
     saveRetrying: 'Kunde inte spara – försöker igen …',
-    placedCount: (placed: number, total: number) => `${placed} av ${total} bitar på plats`,
     complete: 'Pusslet är komplett! Tack alla för alla miljöuppdrag.',
-    allPlacedSoFar:
-      'Alla upplåsta bitar ligger på plats. Fler bitar kommer när vi klarar fler uppdrag!',
   },
 
   missions: {
@@ -128,6 +121,8 @@ export const sv = {
     today: 'Idag',
     open: 'Öppna',
     done: 'Gjort',
+    howTo: 'Gör så här',
+    ifYouWant: 'Om du vill',
     checkboxLabel: (day: number, title: string) => `Jag har gjort uppdrag ${day}: ${title}`,
     /** How many others have done this uppdrag; `completions` includes the user if they did it. */
     others: (completions: number, completedByMe: boolean) => {

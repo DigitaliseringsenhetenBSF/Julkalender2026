@@ -36,7 +36,7 @@ describe('concurrent tick-offs', () => {
       }),
     );
     expect(progress.totalCompletions).toBe(N);
-    expect(progress.unlockedPieces).toBe(2);
+    expect(progress.unlockedPieces).toBe(Math.floor(N / server.ctx.rules.completionsPerPiece));
   });
 
   it('parallel double clicks and tabs from one user count once', async () => {

@@ -18,6 +18,7 @@ export default defineConfig({
       // Trailing slash matters: "/api" would also capture the module /api.ts.
       '/api/': apiTarget,
       '/health': apiTarget,
+      '/icons/': apiTarget,
     },
   },
 });

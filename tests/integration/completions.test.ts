@@ -34,13 +34,23 @@ describe('GET /api/calendar', () => {
     const calendar = body(calendarResponse, await get('/api/calendar'));
     expect(calendar).toMatchObject({ today: '2026-12-10', phase: 'active', simulated: true });
     expect(calendar.missions).toHaveLength(24);
-    expect(calendar.missions[0]).toMatchObject({ day: 1, status: 'open', title: 'Uppdrag 1' });
-    expect(calendar.missions[9]).toMatchObject({ day: 10, status: 'today', title: 'Uppdrag 10' });
+    expect(calendar.missions[0]).toMatchObject({
+      day: 1,
+      status: 'open',
+      title: 'Tipsa om ett miljöhack i teamet',
+      icon: 'lucka-01.svg',
+    });
+    expect(calendar.missions[0]?.howTo).toMatch(/^Dela ett smart vardagsknep/);
+    expect(calendar.missions[0]?.ifYouWant).toBe('Skriv ditt tips i tråden.');
+    expect(calendar.missions[9]).toMatchObject({ day: 10, status: 'today' });
+    // Locked: texts hidden, only the decorative icon is sent.
     expect(calendar.missions[10]).toMatchObject({
       day: 11,
       status: 'locked',
       title: null,
-      description: null,
+      howTo: null,
+      ifYouWant: null,
+      icon: 'lucka-11.svg',
       opensOn: '2026-12-11',
       opened: false,
       completions: 0,
@@ -171,32 +181,34 @@ describe('POST /api/completions', () => {
 });
 
 describe('pieces and un-tick', () => {
-  it('unlocks a piece on every 15th completion and never takes it back', async () => {
-    const colleagues = await createUsers(server, 15);
-    for (const [i, c] of colleagues.slice(0, 14).entries()) {
+  it('unlocks a piece on every n-th completion (campaign.json) and never takes it back', async () => {
+    const per = server.ctx.rules.completionsPerPiece;
+    const colleagues = await createUsers(server, per);
+    const lastColleague = colleagues[per - 1];
+    for (const [i, c] of colleagues.slice(0, per - 1).entries()) {
       const r = body(completionResponse, await tick(1, c));
       expect(r.progress.totalCompletions).toBe(i + 1);
       expect(r.newlyUnlockedPieces).toBe(0);
     }
-    const fifteenth = body(completionResponse, await tick(1, colleagues[14]));
-    expect(fifteenth.newlyUnlockedPieces).toBe(1);
-    expect(fifteenth.progress).toMatchObject({
-      totalCompletions: 15,
+    const nth = body(completionResponse, await tick(1, lastColleague));
+    expect(nth.newlyUnlockedPieces).toBe(1);
+    expect(nth.progress).toMatchObject({
+      totalCompletions: per,
       unlockedPieces: 1,
-      remainingToNextPiece: 15,
+      remainingToNextPiece: per,
     });
 
     // Un-tick: the total drops, the piece stays (high-water mark).
-    const undone = body(completionResponse, await untick(1, colleagues[14]));
+    const undone = body(completionResponse, await untick(1, lastColleague));
     expect(undone.completed).toBe(false);
     expect(undone.progress).toMatchObject({
-      totalCompletions: 14,
+      totalCompletions: per - 1,
       unlockedPieces: 1,
-      remainingToNextPiece: 16,
+      remainingToNextPiece: per + 1,
     });
 
     // Re-ticking does not unlock a second piece.
-    const again = body(completionResponse, await tick(1, colleagues[14]));
+    const again = body(completionResponse, await tick(1, lastColleague));
     expect(again.newlyUnlockedPieces).toBe(0);
     expect(again.progress.unlockedPieces).toBe(1);
   });
@@ -224,9 +236,9 @@ describe('GET /api/progress', () => {
       totalCompletions: 3,
       participants: 2,
       unlockedPieces: 0,
-      totalPieces: 24,
-      completionsPerPiece: 15,
-      remainingToNextPiece: 12,
+      totalPieces: 45,
+      completionsPerPiece: 10,
+      remainingToNextPiece: 7,
       mine: { completed: 2, possible: 10 },
     });
     expect(progress.perDay).toHaveLength(10);

@@ -9,7 +9,6 @@ import {
 } from '../../src/domain/board.ts';
 
 const grid = { columns: 6, rows: 4 };
-const TOLERANCE = 0.35;
 
 describe('correctSlot', () => {
   it('maps ids row-major onto the 6×4 grid', () => {
@@ -24,43 +23,47 @@ describe('correctSlot', () => {
   });
 });
 
-describe('resolveDrop – snapping', () => {
+describe('resolveDrop – no snapping', () => {
   // Piece 9 belongs at row 1, col 2 → origin (2/6, 1/4).
   const origin = { x: 2 / 6, y: 1 / 4 };
   const pieceWidth = 1 / 6;
   const pieceHeight = 1 / 4;
+  const TOLERANCE = 0.2;
 
-  it('snaps exactly onto the slot when inside the tolerance', () => {
-    const result = resolveDrop(
+  it('leaves a piece exactly where it was dropped, even right next to its slot', () => {
+    const drop = {
+      area: 'board' as const,
+      x: origin.x + 0.1 * pieceWidth,
+      y: origin.y - 0.1 * pieceHeight,
+    };
+    const result = resolveDrop(9, drop, grid, TOLERANCE);
+    expect(result).toEqual({ ...drop, placed: true });
+  });
+
+  it('records "placed" only within the tolerance', () => {
+    const near = resolveDrop(
       9,
-      {
-        area: 'board',
-        x: origin.x + 0.3 * pieceWidth,
-        y: origin.y - 0.3 * pieceHeight,
-      },
+      { area: 'board', x: origin.x + 0.15 * pieceWidth, y: origin.y },
       grid,
       TOLERANCE,
     );
-    expect(result).toEqual({ area: 'board', x: origin.x, y: origin.y, placed: true });
-  });
-
-  it('does not snap just outside the tolerance', () => {
-    const result = resolveDrop(
+    const far = resolveDrop(
       9,
-      { area: 'board', x: origin.x + 0.4 * pieceWidth, y: origin.y },
+      { area: 'board', x: origin.x + 0.3 * pieceWidth, y: origin.y },
       grid,
       TOLERANCE,
     );
-    expect(result.placed).toBe(false);
-    expect(result.x).toBeCloseTo(origin.x + 0.4 * pieceWidth);
+    expect(near.placed).toBe(true);
+    expect(far.placed).toBe(false);
+    expect(far.x).toBeCloseTo(origin.x + 0.3 * pieceWidth);
   });
 
-  it('does not snap onto another piece’s slot', () => {
+  it('is not placed on another piece’s slot', () => {
     const result = resolveDrop(9, { area: 'board', x: 0, y: 0 }, grid, TOLERANCE);
     expect(result).toEqual({ area: 'board', x: 0, y: 0, placed: false });
   });
 
-  it('never snaps in a tray, even at matching coordinates', () => {
+  it('is never placed in a tray, even at matching coordinates', () => {
     const result = resolveDrop(9, { area: 'tray_left', ...origin }, grid, TOLERANCE);
     expect(result.placed).toBe(false);
   });

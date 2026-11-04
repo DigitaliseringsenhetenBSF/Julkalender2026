@@ -13,9 +13,8 @@ import {
   type Grid,
   type PiecePosition,
   type Slot,
-  correctSlot,
+  clampPosition,
   nearestSlot,
-  resolveDrop,
   slotOrigin,
 } from '../../domain/board.ts';
 import type { ApiBoardPiece } from '../../shared/contract.ts';
@@ -36,7 +35,10 @@ interface PuzzleProps {
 
 interface BoardMeta {
   grid: Grid;
-  tolerance: number;
+  /** Width / height of the picture and the board. */
+  imageAspect: number;
+  /** Share of a cell each piece box extends beyond its cell (room for the tabs). */
+  pad: { x: number; y: number };
   totalPieces: number;
 }
 
@@ -52,8 +54,6 @@ interface DragState {
 
 /** Movement below this is a click/tap (select), not a drag. */
 const DRAG_THRESHOLD_PX = 4;
-const SNAP_HIGHLIGHT_MS = 800;
-const AREA_ORDER = { tray_left: 0, tray_right: 1, board: 2 } as const;
 
 const slotKey = (slot: Slot) => `${slot.row}:${slot.col}`;
 
@@ -71,13 +71,12 @@ export function Puzzle(props: PuzzleProps) {
   const [drag, setDrag] = useState<{ id: number; left: number; top: number } | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeSlot, setActiveSlot] = useState<Slot>({ row: 0, col: 0 });
-  const [snappedId, setSnappedId] = useState<number | null>(null);
+  const [complete, setComplete] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const trayLeftRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const trayRightRef = useRef<HTMLDivElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
   const pieceButtons = useRef(new Map<number, HTMLButtonElement>());
   const slotButtons = useRef(new Map<string, HTMLButtonElement>());
   const pendingFocus = useRef<(() => HTMLElement | null | undefined) | null>(null);
@@ -89,7 +88,10 @@ export function Puzzle(props: PuzzleProps) {
   const loading = useRef(false);
 
   const saver = usePieceSaver({
-    onSaved: (piece) => setPieces((prev) => prev.map((p) => (p.id === piece.id ? piece : p))),
+    onSaved: (piece, isComplete) => {
+      setPieces((prev) => prev.map((p) => (p.id === piece.id ? piece : p)));
+      setComplete(isComplete);
+    },
     onConflict: () => void loadBoard(),
     onSessionLost: () => propsRef.current.onSessionLost(),
   });
@@ -105,9 +107,11 @@ export function Puzzle(props: PuzzleProps) {
       const response = await api.board();
       setMeta({
         grid: response.grid,
-        tolerance: response.snapTolerance,
+        imageAspect: response.imageAspect,
+        pad: response.pad,
         totalPieces: response.totalPieces,
       });
+      setComplete(response.complete);
       // Keep local positions for pieces with an unsaved move; the server wins otherwise.
       setPieces((prev) => {
         const local = new Map(prev.map((p) => [p.id, p]));
@@ -163,9 +167,13 @@ export function Puzzle(props: PuzzleProps) {
       return { left: r.left - c.left, top: r.top - c.top, width: r.width, height: r.height };
     };
     const boardRect = rel(board);
+    const cellWidth = boardRect.width / meta.grid.columns;
+    const cellHeight = boardRect.height / meta.grid.rows;
+    const pad = { x: meta.pad.x * cellWidth, y: meta.pad.y * cellHeight };
     setLayout({
       areas: { tray_left: rel(left), board: boardRect, tray_right: rel(right) },
-      pieceSize: boardRect.width / meta.grid.columns,
+      pad,
+      box: { width: cellWidth + 2 * pad.x, height: cellHeight + 2 * pad.y },
     });
   }, [meta]);
 
@@ -188,54 +196,24 @@ export function Puzzle(props: PuzzleProps) {
 
   // --- Placement ---------------------------------------------------------------------------
 
-  const placedAt = useCallback(
-    (slot: Slot) => {
-      if (!meta) return false;
-      return piecesRef.current.some((p) => {
-        if (!p.placed) return false;
-        const s = correctSlot(p.id, meta.grid);
-        return s.row === slot.row && s.col === slot.col;
-      });
-    },
-    [meta],
-  );
-
+  /**
+   * Puts a piece exactly where it was dropped (kept inside its area). No snapping and no
+   * "right/wrong" feedback – the puzzle is solved without help (SPEC §5.5).
+   */
   function placePiece(id: number, position: PiecePosition) {
-    const piece = piecesRef.current.find((p) => p.id === id);
-    if (!piece || !meta) return null;
-    // Same rule as the server, for instant feedback; the server's answer is authoritative.
-    const resolved = resolveDrop(id, position, meta.grid, meta.tolerance);
+    if (!meta) return;
+    const moved = clampPosition(position, meta.grid);
     const topZ = Math.max(0, ...piecesRef.current.map((p) => p.z)) + 1;
     setPieces((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...resolved, isNew: false, z: topZ } : p)),
+      prev.map((p) => (p.id === id ? { ...p, ...moved, isNew: false, z: topZ } : p)),
     );
-    saver.save(id, { area: resolved.area, x: resolved.x, y: resolved.y });
-    if (resolved.placed) {
-      props.announce(sv.puzzle.snapped(piece.alt));
-      setSnappedId(id);
-      setTimeout(
-        () => setSnappedId((current) => (current === id ? null : current)),
-        SNAP_HIGHLIGHT_MS,
-      );
-    }
-    return resolved;
-  }
-
-  function loosePiecesInTabOrder(): ApiBoardPiece[] {
-    return piecesRef.current
-      .filter((p) => !p.placed)
-      .sort((a, b) => AREA_ORDER[a.area] - AREA_ORDER[b.area] || a.y - b.y || a.x - b.x);
-  }
-
-  function focusAfterPlacing(placedId: number) {
-    const next = loosePiecesInTabOrder().find((p) => p.id !== placedId);
-    pendingFocus.current = () => (next ? pieceButtons.current.get(next.id) : headingRef.current);
+    saver.save(id, moved);
   }
 
   // --- Drag (mouse, touch, pen) ------------------------------------------------------------
 
   function onPointerDown(event: PointerEvent<HTMLButtonElement>, piece: ApiBoardPiece) {
-    if (!layout || piece.placed || event.button !== 0 || !containerRef.current) return;
+    if (!layout || event.button !== 0 || !containerRef.current) return;
     const c = containerRef.current.getBoundingClientRect();
     const position = toPixels(piece, layout);
     dragState.current = {
@@ -296,16 +274,6 @@ export function Puzzle(props: PuzzleProps) {
     }
   }
 
-  function firstOpenSlot(): Slot {
-    if (!meta) return { row: 0, col: 0 };
-    for (let row = 0; row < meta.grid.rows; row++) {
-      for (let col = 0; col < meta.grid.columns; col++) {
-        if (!placedAt({ row, col })) return { row, col };
-      }
-    }
-    return { row: 0, col: 0 };
-  }
-
   function onPieceClick(piece: ApiBoardPiece) {
     if (suppressClick.current) {
       suppressClick.current = false;
@@ -316,8 +284,8 @@ export function Puzzle(props: PuzzleProps) {
       cancelSelection(piece.id);
       return;
     }
-    const start =
-      piece.area === 'board' ? nearestSlot(piece.x, piece.y, meta.grid) : firstOpenSlot();
+    const start: Slot =
+      piece.area === 'board' ? nearestSlot(piece.x, piece.y, meta.grid) : { row: 0, col: 0 };
     setSelectedId(piece.id);
     setActiveSlot(start);
     props.announce(sv.puzzle.picked(piece.alt));
@@ -333,19 +301,11 @@ export function Puzzle(props: PuzzleProps) {
 
   function onSlotActivate(slot: Slot) {
     if (selectedId === null || !meta) return;
-    if (placedAt(slot)) {
-      props.announce(sv.puzzle.slotTaken);
-      return;
-    }
     const id = selectedId;
-    const result = placePiece(id, { area: 'board', ...slotOrigin(slot, meta.grid) });
-    if (result?.placed) {
-      setSelectedId(null);
-      focusAfterPlacing(id);
-    } else {
-      // Keep the piece selected so the next slot can be tried right away.
-      props.announce(sv.puzzle.notHere);
-    }
+    placePiece(id, { area: 'board', ...slotOrigin(slot, meta.grid) });
+    setSelectedId(null);
+    props.announce(sv.puzzle.movedTo(slot.row + 1, slot.col + 1));
+    pendingFocus.current = () => pieceButtons.current.get(id);
   }
 
   function onSlotKeyDown(event: KeyboardEvent<HTMLButtonElement>, slot: Slot) {
@@ -387,9 +347,6 @@ export function Puzzle(props: PuzzleProps) {
   if (!meta)
     return <section className="card puzzle" aria-busy="true" aria-label={sv.puzzle.heading} />;
 
-  const placedCount = pieces.filter((p) => p.placed).length;
-  const complete = placedCount === meta.totalPieces;
-  const allPlacedSoFar = pieces.length > 0 && placedCount === pieces.length && !complete;
   const selected = pieces.find((p) => p.id === selectedId) ?? null;
   const slots: Slot[] = [];
   for (let row = 0; row < meta.grid.rows; row++) {
@@ -405,20 +362,25 @@ export function Puzzle(props: PuzzleProps) {
 
   return (
     <section className="card puzzle" aria-labelledby="puzzle-heading">
-      <div className="section-head">
-        <h2 id="puzzle-heading" ref={headingRef} tabIndex={-1}>
-          {sv.puzzle.heading}
-        </h2>
-        <span className="pill">{sv.puzzle.placedCount(placedCount, meta.totalPieces)}</span>
-      </div>
+      <h2 id="puzzle-heading">{sv.puzzle.heading}</h2>
       <p className="lead">{sv.puzzle.lead}</p>
       <p className="hint" id="puzzle-keyboard-help">
         {sv.puzzle.keyboardHelp}
       </p>
 
       {complete && <p className="banner banner--success">{sv.puzzle.complete}</p>}
-      {allPlacedSoFar && <p className="banner">{sv.puzzle.allPlacedSoFar}</p>}
       {pieces.length === 0 && <p className="banner">{sv.puzzle.empty(completionsPerPiece)}</p>}
+
+      {/* Jigsaw outlines as clip paths: a piece only reacts where it is actually drawn. */}
+      <svg className="piece-shapes" width="0" height="0" aria-hidden="true" focusable="false">
+        <defs>
+          {pieces.map((piece) => (
+            <clipPath key={piece.id} id={`mjk-shape-${piece.id}`} clipPathUnits="objectBoundingBox">
+              <path d={piece.shape} />
+            </clipPath>
+          ))}
+        </defs>
+      </svg>
 
       <div
         ref={containerRef}
@@ -430,11 +392,11 @@ export function Puzzle(props: PuzzleProps) {
           ref={boardRef}
           className="board"
           role="group"
-          aria-label={sv.puzzle.board(placedCount, meta.totalPieces)}
+          aria-label={sv.puzzle.board}
+          style={{ aspectRatio: meta.imageAspect }}
         >
           {slots.map((slot) => {
             const key = slotKey(slot);
-            const filled = placedAt(slot);
             if (!selected) return <div key={key} className="slot" aria-hidden="true" />;
             const isActive = slot.row === activeSlot.row && slot.col === activeSlot.col;
             return (
@@ -447,10 +409,7 @@ export function Puzzle(props: PuzzleProps) {
                 type="button"
                 className={`slot slot--target${isActive ? ' slot--active' : ''}`}
                 tabIndex={isActive ? 0 : -1}
-                aria-label={
-                  sv.puzzle.slotLabel(slot.row + 1, slot.col + 1) +
-                  (filled ? `, ${sv.puzzle.slotFilled}` : '')
-                }
+                aria-label={sv.puzzle.slotLabel(slot.row + 1, slot.col + 1)}
                 onFocus={() => setActiveSlot(slot)}
                 onClick={() => onSlotActivate(slot)}
                 onKeyDown={(event) => onSlotKeyDown(event, slot)}
@@ -465,25 +424,6 @@ export function Puzzle(props: PuzzleProps) {
             {pieces.map((piece) => {
               const dragging = drag?.id === piece.id;
               const position = dragging ? drag : toPixels(piece, layout);
-              const style: CSSProperties = {
-                width: layout.pieceSize,
-                height: layout.pieceSize,
-                transform: `translate(${position.left}px, ${position.top}px)`,
-                zIndex: dragging ? 10_000 : piece.z,
-              };
-              const image = <img src={api.pieceImageUrl(piece.id)} alt="" draggable={false} />;
-              if (piece.placed) {
-                return (
-                  <div
-                    key={piece.id}
-                    className={`piece piece--placed${snappedId === piece.id ? ' piece--snapped' : ''}`}
-                    style={style}
-                    aria-hidden="true"
-                  >
-                    {image}
-                  </div>
-                );
-              }
               const classes = [
                 'piece',
                 dragging && 'piece--dragging',
@@ -493,37 +433,51 @@ export function Puzzle(props: PuzzleProps) {
                 .filter(Boolean)
                 .join(' ');
               return (
-                <button
+                <div
                   key={piece.id}
-                  ref={(el) => {
-                    if (el) pieceButtons.current.set(piece.id, el);
-                    else pieceButtons.current.delete(piece.id);
-                  }}
-                  type="button"
                   className={classes}
-                  style={style}
-                  aria-label={sv.puzzle.pieceLabel(
-                    piece.alt,
-                    sv.puzzle.where[piece.area],
-                    piece.isNew,
-                  )}
-                  aria-pressed={selectedId === piece.id}
-                  aria-describedby="puzzle-keyboard-help"
                   data-piece-id={piece.id}
-                  onPointerDown={(event) => onPointerDown(event, piece)}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onPointerCancel={onPointerCancel}
-                  onClick={() => onPieceClick(piece)}
-                  onKeyDown={(event) => onPieceKeyDown(event, piece)}
+                  style={{
+                    width: layout.box.width,
+                    height: layout.box.height,
+                    transform: `translate(${position.left}px, ${position.top}px)`,
+                    zIndex: dragging ? 10_000 : piece.z,
+                  }}
                 >
-                  {image}
+                  <button
+                    ref={(el) => {
+                      if (el) pieceButtons.current.set(piece.id, el);
+                      else pieceButtons.current.delete(piece.id);
+                    }}
+                    type="button"
+                    className="piece__hit"
+                    style={{ clipPath: `url(#mjk-shape-${piece.id})` }}
+                    aria-label={sv.puzzle.pieceLabel(
+                      piece.alt,
+                      sv.puzzle.where[piece.area],
+                      piece.isNew,
+                    )}
+                    aria-pressed={selectedId === piece.id}
+                    aria-describedby="puzzle-keyboard-help"
+                    onPointerDown={(event) => onPointerDown(event, piece)}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                    onClick={() => onPieceClick(piece)}
+                    onKeyDown={(event) => onPieceKeyDown(event, piece)}
+                  >
+                    <img src={api.pieceImageUrl(piece.id)} alt="" draggable={false} />
+                  </button>
                   {piece.isNew && (
-                    <span className="piece__badge" aria-hidden="true">
+                    <span
+                      className="piece__badge"
+                      aria-hidden="true"
+                      style={{ top: layout.pad.y - 8, right: layout.pad.x - 8 }}
+                    >
                       {sv.puzzle.newBadge}
                     </span>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>

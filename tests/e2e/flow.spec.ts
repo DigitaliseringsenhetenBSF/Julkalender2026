@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
 import {
   correctSlot,
-  dragPieceToItsSlot,
-  loosePieces,
+  dragPieceToCell,
+  piece,
+  pieceIdOf,
+  pieces,
   resetDatabase,
   signIn,
   uncoveredPieceId,
@@ -12,92 +14,96 @@ test.beforeEach(async ({ page }) => {
   await resetDatabase(page);
 });
 
-test('tick off → new piece → drag to board → reload → still placed', async ({ page }) => {
+test('tick off → new piece → drag to board → reload → still where it was put', async ({ page }) => {
   await signIn(page);
 
   await expect(page.getByText('Testläge: kalendern visar 10 december som idag.')).toBeVisible();
-  await expect(loosePieces(page)).toHaveCount(3);
+  await expect(pieces(page)).toHaveCount(3);
 
   // Today's lucka (10) is a closed door until it is turned over.
   await page.getByRole('button', { name: /^Lucka 10 / }).click();
-  const today = page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 10' });
-  await expect(today.getByRole('heading', { name: 'Lucka 10: Uppdrag 10' })).toBeVisible();
+  const today = page.locator('.lucka--opened').filter({
+    has: page.getByRole('heading', { name: /^Lucka 10:/ }),
+  });
+  await expect(today).toContainText('Gör så här');
+  await expect(today).toContainText('Om du vill');
 
-  // Ticking off today's uppdrag is the 60th completion and unlocks piece number 4.
+  // Ticking off today's uppdrag is one completion short of the 4th piece in the demo data.
   await today.getByRole('checkbox').check();
   await expect(today).toContainText(/Du och \d+ kollegor har gjort uppdraget/);
   await expect(page.locator('.toast')).toContainText('Ditt uppdrag låste upp en ny pusselbit!');
-  await expect(loosePieces(page)).toHaveCount(4);
+  await expect(pieces(page)).toHaveCount(4);
 
+  // Lay a piece one cell away from its own slot: it must stay there – nothing snaps.
   const id = await uncoveredPieceId(page);
+  const slot = correctSlot(id);
+  const cell = { row: slot.row, col: slot.col === 0 ? 1 : slot.col - 1 };
   const saved = page.waitForResponse(
     (r) => r.url().endsWith(`/api/board/pieces/${id}`) && r.request().method() === 'PUT',
   );
-  await dragPieceToItsSlot(page, id);
+  await dragPieceToCell(page, id, cell);
   expect((await saved).status()).toBe(200);
-  await expect(page.getByText('1 av 24 bitar på plats')).toBeVisible();
-  await expect(page.locator('.piece--placed')).toHaveCount(1);
+  // Compare positions relative to the board (page scroll may differ after a reload).
+  const offset = async () => {
+    const p = await page.locator(`.piece[data-piece-id="${id}"]`).boundingBox();
+    const b = await page.locator('.board').boundingBox();
+    return { x: (p?.x ?? 0) - (b?.x ?? 0), y: (p?.y ?? 0) - (b?.y ?? 0) };
+  };
+  const before = await offset();
 
   await page.reload();
-  await expect(page.getByText('1 av 24 bitar på plats')).toBeVisible();
-  await expect(page.locator('.piece--placed')).toHaveCount(1);
-  await expect(loosePieces(page)).toHaveCount(3);
+  await expect(pieces(page)).toHaveCount(4);
+  const after = await offset();
+  expect(Math.abs(after.x - before.x)).toBeLessThan(2);
+  expect(Math.abs(after.y - before.y)).toBeLessThan(2);
+  // No hints: there is no "pieces in place" counter and no "complete" banner.
+  await expect(page.getByText(/bitar på plats/)).toHaveCount(0);
+  await expect(page.getByText('Pusslet är komplett!', { exact: false })).toHaveCount(0);
 });
 
-test('keyboard only: pick a piece, choose its slot, tick off a lucka', async ({ page }) => {
+test('keyboard only: pick a piece, choose a cell, tick off a lucka', async ({ page }) => {
   await signIn(page, 'Testanvändare 2');
 
-  const first = loosePieces(page).first();
-  const id = Number(await first.getAttribute('data-piece-id'));
-  await first.focus();
+  const id = await pieceIdOf(page, 0);
+  await piece(page, id).focus();
   await page.keyboard.press('Enter');
-  // Focus starts on the first open slot (row 1, column 1).
+  // A piece from a tray starts at row 1, column 1.
   await expect(page.getByRole('button', { name: 'Rad 1, kolumn 1' })).toBeFocused();
 
-  const slot = correctSlot(id);
-  for (let i = 0; i < slot.row; i++) await page.keyboard.press('ArrowDown');
-  for (let i = 0; i < slot.col; i++) await page.keyboard.press('ArrowRight');
-  await expect(
-    page.getByRole('button', { name: `Rad ${slot.row + 1}, kolumn ${slot.col + 1}` }),
-  ).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('button', { name: 'Rad 2, kolumn 3' })).toBeFocused();
   await page.keyboard.press('Enter');
 
-  await expect(page.getByText('1 av 24 bitar på plats')).toBeVisible();
-  await expect(page.locator('[aria-live="polite"]').last()).toContainText('Rätt!');
-  // Focus moves on to the next loose piece.
-  await expect(page.locator('button.piece:focus')).toHaveCount(1);
+  // Only where it now lies is announced – never whether it is right.
+  const live = page.locator('[aria-live="polite"]').last();
+  await expect(live).toContainText('Biten ligger nu på rad 2, kolumn 3.');
+  await expect(piece(page, id)).toBeFocused();
+  await expect(piece(page, id)).toHaveAccessibleName(/på bordet/);
 
   // Turn lucka 3 over: focus moves to the uppdrag behind the door.
   await page.getByRole('button', { name: 'Lucka 3 Öppna', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('heading', { name: 'Lucka 3: Uppdrag 3' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: /^Lucka 3:/ })).toBeFocused();
   // (Safari's default Tab skips checkboxes, so focus it directly; Space still toggles it.)
   const checkbox = page.getByRole('checkbox', { name: /Jag har gjort uppdrag 3:/ });
   await checkbox.focus();
   await page.keyboard.press('Space');
   await expect(checkbox).toBeChecked();
-  await expect(page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 3' })).toContainText(
-    'Du och',
-  );
 });
 
-test('a wrong slot keeps the piece selected and Escape cancels', async ({ page }) => {
+test('Escape cancels choosing a cell', async ({ page }) => {
   await signIn(page, 'Testanvändare 3');
-  const first = loosePieces(page).first();
-  const id = Number(await first.getAttribute('data-piece-id'));
-  await first.focus();
+  const id = await pieceIdOf(page, 0);
+  await piece(page, id).focus();
   await page.keyboard.press('Enter');
-
-  // Focus starts on row 1, column 1; step right only if that happens to be this piece's slot.
-  const slot = correctSlot(id);
-  if (slot.row === 0 && slot.col === 0) await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('Enter');
-  await expect(page.locator('[aria-live="polite"]').last()).toContainText('passar inte');
-  await expect(page.getByText('0 av 24 bitar på plats')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Rad 1, kolumn 1' })).toBeFocused();
 
   await page.keyboard.press('Escape');
   await expect(page.locator('[aria-live="polite"]').last()).toContainText('Valet avbröts');
-  await expect(page.locator(`button.piece[data-piece-id="${id}"]`)).toBeFocused();
+  await expect(piece(page, id)).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Rad 1, kolumn 1' })).toHaveCount(0);
 });
 
 test('future luckor are locked and show when they open', async ({ page }) => {
@@ -112,15 +118,17 @@ test('future luckor are locked and show when they open', async ({ page }) => {
 test('an opened lucka stays open and shows how many have done the uppdrag', async ({ page }) => {
   await signIn(page);
   await page.getByRole('button', { name: 'Lucka 2 Öppna', exact: true }).click();
-  const lucka = page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 2' });
-  // Demo data: six colleagues have done each of the first luckor.
+  const lucka = page.locator('.lucka--opened').filter({
+    has: page.getByRole('heading', { name: /^Lucka 2:/ }),
+  });
+  // Demo data: a few colleagues have done each of the first luckor.
   await expect(lucka).toContainText(/\d+ kollegor har gjort uppdraget/);
 
   await lucka.getByRole('checkbox').check();
   await expect(lucka).toContainText(/Du och \d+ kollegor har gjort uppdraget/);
 
   await page.reload();
-  await expect(page.locator('.lucka--opened').filter({ hasText: 'Uppdrag 2' })).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: /^Lucka 2:/ })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Lucka 2 Öppna', exact: true })).toHaveCount(0);
 });
 

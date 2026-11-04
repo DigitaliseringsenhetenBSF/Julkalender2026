@@ -11,11 +11,11 @@ const MAX_RETRY_DELAY_MS = 30_000;
  * - at most one request in flight per piece; a newer move replaces a queued one (latest wins),
  *   so out-of-order responses can never move a piece back;
  * - transient failures retry with exponential backoff (1 s, 2 s, 4 s … 30 s);
- * - 404/409 mean the server's state differs (e.g. piece already locked) → `onConflict`
+ * - 404/409 mean the server's state differs (e.g. the piece is not on the board) → `onConflict`
  *   so the board is reloaded from the server.
  */
 export function usePieceSaver(handlers: {
-  onSaved: (piece: ApiBoardPiece) => void;
+  onSaved: (piece: ApiBoardPiece, complete: boolean) => void;
   onConflict: () => void;
   onSessionLost: () => void;
 }) {
@@ -45,10 +45,10 @@ export function usePieceSaver(handlers: {
       inFlight.current.add(id);
       refreshStatus();
       try {
-        const { piece } = await api.movePiece(id, body);
+        const { piece, complete } = await api.movePiece(id, body);
         attempts.current.delete(id);
         // Only apply the server's answer if no newer move is waiting.
-        if (!queued.current.has(id)) handlersRef.current.onSaved(piece);
+        if (!queued.current.has(id)) handlersRef.current.onSaved(piece, complete);
       } catch (error) {
         if (error instanceof ApiCallError && (error.status === 404 || error.status === 409)) {
           attempts.current.delete(id);

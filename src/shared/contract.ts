@@ -16,7 +16,6 @@ export const ERROR_CODES = [
   'NOT_FOUND',
   'MISSION_LOCKED',
   'CAMPAIGN_CLOSED',
-  'PIECE_LOCKED',
   'INTERNAL_ERROR',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -54,7 +53,12 @@ export const missionSchema = z.object({
   opensOn: isoDate,
   status: missionStatus,
   title: z.string().nullable(),
-  description: z.string().nullable(),
+  /** "Gör så här" – null while locked. */
+  howTo: z.string().nullable(),
+  /** "Om du vill" – null while locked. */
+  ifYouWant: z.string().nullable(),
+  /** Icon file name, served from /icons/<file>; shown on every door. */
+  icon: z.string(),
   completed: z.boolean(),
   /** The user has opened ("vänt") this lucka; a completed lucka always counts as opened. */
   opened: z.boolean(),
@@ -119,17 +123,23 @@ export const boardPieceSchema = z.object({
   x: z.number().min(0).max(1),
   y: z.number().min(0).max(1),
   z: z.number().int(),
-  placed: z.boolean(),
   isNew: z.boolean(),
   alt: z.string(),
+  /** Jigsaw outline in 0–1 units of the piece box (SVG path for an objectBoundingBox clip). */
+  shape: z.string(),
 });
 export type ApiBoardPiece = z.infer<typeof boardPieceSchema>;
 
 export const boardResponse = z.object({
   grid: z.object({ columns: z.number().int().positive(), rows: z.number().int().positive() }),
-  snapTolerance: z.number().positive(),
+  /** Width / height of the whole picture (and the board). */
+  imageAspect: z.number().positive(),
+  /** Share of a cell each piece box extends beyond its cell on every side (room for tabs). */
+  pad: z.object({ x: z.number().min(0), y: z.number().min(0) }),
   totalPieces: z.number().int().positive(),
   pieces: z.array(boardPieceSchema),
+  /** Every piece is unlocked and lies in its place on this user's board. */
+  complete: z.boolean(),
   /** Pieces placed in this user's trays by this request, i.e. unlocked since the last visit. */
   arrived: count,
   /** The user had no pieces before this request. */
@@ -144,7 +154,7 @@ export const movePieceRequest = z.object({
   y: z.number().min(-10).max(10),
 });
 export type MovePieceRequest = z.infer<typeof movePieceRequest>;
-export const movePieceResponse = z.object({ piece: boardPieceSchema });
+export const movePieceResponse = z.object({ piece: boardPieceSchema, complete: z.boolean() });
 export const pieceIdParams = z.object({ id: z.coerce.number().int().positive() });
 
 export const healthResponse = z.object({ status: z.enum(['ok', 'error']) });

@@ -1,129 +1,191 @@
 {
-  "$comment": "Puzzle layout. Piece n belongs at row floor((n-1)/columns), column (n-1) % columns. unlockSeed fixes the shared unlock order and must not change after the first piece is unlocked.",
-  "columns": 6,
-  "rows": 4,
+  "$comment": "Puzzle layout (human-edited). Piece n belongs at row floor((n-1)/columns), column (n-1) % columns. unlockSeed fixes the shared unlock order and must not change after the first piece is unlocked. cutSeed fixes the piece shapes (npm run puzzle:cut). correctTolerance: how close (share of a cell) a piece must lie to count as placed; there is no snapping.",
+  "columns": 9,
+  "rows": 5,
   "unlockSeed": 20261201,
-  "snapTolerance": 0.35,
+  "cutSeed": 20261224,
+  "correctTolerance": 0.2,
+  "source": "source/vinterfest.png",
   "pieces": [
     {
       "id": 1,
-      "file": "pusselbit_01.png",
-      "alt": "Ekorre och blåmes på en snöig gren vid ett staket"
+      "alt": "Ekorre på en snöig trädgren"
     },
     {
       "id": 2,
-      "file": "pusselbit_02.png",
-      "alt": "Barn åker pulka nedför en snöig backe"
+      "alt": "Snötyngda grenar över en backe"
     },
     {
       "id": 3,
-      "file": "pusselbit_03.png",
-      "alt": "Snötäckt gård och barn i snön framför granskogen"
+      "alt": "Barn åker pulka nedför backen"
     },
     {
       "id": 4,
-      "file": "pusselbit_04.png",
-      "alt": "Kyrka med rött torn i skymningsljus"
+      "alt": "Granskog och en röd stuga i skymningen"
     },
     {
       "id": 5,
-      "file": "pusselbit_05.png",
-      "alt": "Stor julgran med lysande stjärna i toppen"
+      "alt": "Gula hus bland snöiga granar"
     },
     {
       "id": 6,
-      "file": "pusselbit_06.png",
-      "alt": "Tomten i släde dragen av renar över hustaken"
+      "alt": "Kyrka med rött torn"
     },
     {
       "id": 7,
-      "file": "pusselbit_07.png",
-      "alt": "Röd stuga med tomtar och en stege mot taket"
+      "alt": "Solnedgång bakom granarna"
     },
     {
       "id": 8,
-      "file": "pusselbit_08.png",
-      "alt": "Snöskoter i backen intill ett trästaket"
+      "alt": "Tomten i släde dragen av renar"
     },
     {
       "id": 9,
-      "file": "pusselbit_09.png",
-      "alt": "Skridskoåkare på en frusen damm"
+      "alt": "Renar på himlen över granskogen"
     },
     {
       "id": 10,
-      "file": "pusselbit_10.png",
-      "alt": "Skridskoåkare och ett hockeymål på isen"
+      "alt": "Snötäckt tak med skorsten och barn i backen"
     },
     {
       "id": 11,
-      "file": "pusselbit_11.png",
-      "alt": "Julmarknad med karusell och folk i tomteluvor"
+      "alt": "Barn vid ett trästaket i backen"
     },
     {
       "id": 12,
-      "file": "pusselbit_12.png",
-      "alt": "Marknadsstånd och en snögubbe med hög hatt"
+      "alt": "Någon åker kälke nedför backen"
     },
     {
       "id": 13,
-      "file": "pusselbit_13.png",
-      "alt": "Tomtar som drar en kälke lastad med paket"
+      "alt": "Kälkåkare och barn vid isen"
     },
     {
       "id": 14,
-      "file": "pusselbit_14.png",
-      "alt": "Fika vid ett långbord ute i snön"
+      "alt": "Skridskoåkare på den frusna dammen"
     },
     {
       "id": 15,
-      "file": "pusselbit_15.png",
-      "alt": "Barn runt en snögubbe med hög hatt och halsduk"
+      "alt": "Hockeyspel med mål på isen"
     },
     {
       "id": 16,
-      "file": "pusselbit_16.png",
-      "alt": "Gatlykta och en familj som promenerar i snön"
+      "alt": "Stor julgran med ljus och stjärna"
     },
     {
       "id": 17,
-      "file": "pusselbit_17.png",
-      "alt": "Stenbro över en porlande bäck"
+      "alt": "Julmarknad med skylt"
     },
     {
       "id": 18,
-      "file": "pusselbit_18.png",
-      "alt": "Barn åker kälke nedför en brant backe"
+      "alt": "Karusell och en snögubbe med hög hatt"
     },
     {
       "id": 19,
-      "file": "pusselbit_19.png",
-      "alt": "Fågelholk och en ren vid staketet"
+      "alt": "Röd stuga med upplysta fönster och en fågelholk"
     },
     {
       "id": 20,
-      "file": "pusselbit_20.png",
-      "alt": "Barn bygger en snögubbe vid staketet"
+      "alt": "Stugans dörr, en stege och tomtar"
     },
     {
       "id": 21,
-      "file": "pusselbit_21.png",
-      "alt": "Två barn rullar en stor snöboll"
+      "alt": "Tomtar som fikar vid ett långbord"
     },
     {
       "id": 22,
-      "file": "pusselbit_22.png",
-      "alt": "Ett barn går på promenad med en hund"
+      "alt": "Barn och vuxna samlade i snön"
     },
     {
       "id": 23,
-      "file": "pusselbit_23.png",
-      "alt": "Någon gör en snöängel medan en hund springer förbi"
+      "alt": "Glada människor vid en stenmur"
     },
     {
       "id": 24,
-      "file": "pusselbit_24.png",
-      "alt": "Röd bod med ett hjärta på dörren bland snöiga granar"
+      "alt": "Gatlykta framför en snöig gran"
+    },
+    {
+      "id": 25,
+      "alt": "Tomte vid en stenbro"
+    },
+    {
+      "id": 26,
+      "alt": "Stenbro över en bäck"
+    },
+    {
+      "id": 27,
+      "alt": "Någon fiskar vid bäcken och en tomte med kälke"
+    },
+    {
+      "id": 28,
+      "alt": "Fågelholk med ett hjärta"
+    },
+    {
+      "id": 29,
+      "alt": "Barn och tomte bygger en snögubbe med hög hatt"
+    },
+    {
+      "id": 30,
+      "alt": "Barn leker vid ett långbord i snön"
+    },
+    {
+      "id": 31,
+      "alt": "Snögubbe med hög hatt och halsduk"
+    },
+    {
+      "id": 32,
+      "alt": "Glada vuxna i vinterkläder"
+    },
+    {
+      "id": 33,
+      "alt": "Gatlykta och barn i en lastad kälke"
+    },
+    {
+      "id": 34,
+      "alt": "Fågelholk och barn med en julklapp"
+    },
+    {
+      "id": 35,
+      "alt": "Snögubbe vid den frusna bäcken"
+    },
+    {
+      "id": 36,
+      "alt": "Barn och snögubbe vid bäcken"
+    },
+    {
+      "id": 37,
+      "alt": "Ren vid ett trästaket"
+    },
+    {
+      "id": 38,
+      "alt": "Barn vid en vedstapel under snö"
+    },
+    {
+      "id": 39,
+      "alt": "Hund vid ett snöigt trästaket"
+    },
+    {
+      "id": 40,
+      "alt": "Barn rullar snöbollar"
+    },
+    {
+      "id": 41,
+      "alt": "Ett barn och en liten hund i snön"
+    },
+    {
+      "id": 42,
+      "alt": "Tomte som ramlat i snön"
+    },
+    {
+      "id": 43,
+      "alt": "Hund som springer i snön"
+    },
+    {
+      "id": 44,
+      "alt": "Barn åker kälke"
+    },
+    {
+      "id": 45,
+      "alt": "Röd bod med ett hjärta i dörren"
     }
   ]
 }

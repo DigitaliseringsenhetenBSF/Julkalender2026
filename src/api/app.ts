@@ -1,9 +1,9 @@
-import { existsSync } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
-import { WEB_DIST_DIR } from '../data/paths.ts';
+import { ICONS_DIR, WEB_DIST_DIR } from '../data/paths.ts';
 import { devAuthRoutes } from './auth/devAuth.ts';
 import { requireUser } from './auth/session.ts';
 import { resetDatabase } from './bootstrap.ts';
@@ -58,6 +58,19 @@ export async function buildApp(
     }
   });
 
+  // Lucka icons are decorative and shown on every door, so they need no session.
+  app.get('/icons/:file', async (request, reply) => {
+    const { file } = request.params as { file: string };
+    const path = join(ICONS_DIR, file);
+    if (!/^[\w-]+\.svg$/.test(file) || !existsSync(path)) {
+      throw new ApiError(404, 'NOT_FOUND', 'Icon not found');
+    }
+    return reply
+      .type('image/svg+xml')
+      .header('Cache-Control', 'public, max-age=86400')
+      .send(createReadStream(path));
+  });
+
   await sessionRoutes(app, ctx);
   if (ctx.config.authMode === 'dev') await devAuthRoutes(app, ctx);
 
@@ -92,7 +105,10 @@ export async function buildApp(
 
   app.setNotFoundHandler((request, reply) => {
     const isPageRequest =
-      request.method === 'GET' && !request.url.startsWith('/api/') && request.url !== '/health';
+      request.method === 'GET' &&
+      !request.url.startsWith('/api/') &&
+      !request.url.startsWith('/icons/') &&
+      request.url !== '/health';
     if (hasWebBuild && isPageRequest) {
       return reply.header('Cache-Control', 'no-cache').sendFile('index.html');
     }

@@ -1,125 +1,197 @@
 {
-  "$comment": "Source of truth for mission texts until the admin UI exists. `npm run db:seed` upserts these into the database.",
+  "$comment": "Source: '24 uppdrag.docx' from the campaign owner (2026-11-04). Source of truth for mission texts until the admin UI exists; the server applies this file on start. icon = file in assets/icons; iconDescription = the illustration the owner described (simplified line icons for now).",
   "missions": [
     {
       "day": 1,
-      "title": "Uppdrag 1",
-      "description": "Uppdraget presenteras snart."
+      "title": "Tipsa om ett miljöhack i teamet",
+      "howTo": "Dela ett smart vardagsknep du använder hemma eller på jobbet (t.ex. återanvända brödpåsar, frysa in örter i olja, eller kaffesump som luktslukare).",
+      "ifYouWant": "Skriv ditt tips i tråden.",
+      "icon": "lucka-01.svg",
+      "iconDescription": "En glödlampa som växer upp ur en liten blomkruka."
     },
     {
       "day": 2,
-      "title": "Uppdrag 2",
-      "description": "Uppdraget presenteras snart."
+      "title": "Välj en säsongsanpassad råvara",
+      "howTo": "Välj minst en säsongsanpassad råvara idag, till exempel morot, rödbeta, palsternacka eller vitkål. Att äta i säsong sparar både energi och långa transporter.",
+      "ifYouWant": "Ta en bild på din måltid eller skriv i tråden vilken råvara du valde och hur du använde den.",
+      "icon": "lucka-02.svg",
+      "iconDescription": "En rustik träkorg med rotfrukter (palsternacka, rödbeta och morot)."
     },
     {
       "day": 3,
-      "title": "Uppdrag 3",
-      "description": "Uppdraget presenteras snart."
+      "title": "Plocka 3 skräp på lunchpromenaden",
+      "howTo": "Få dagsljus och gör närmiljön runt kontoret trevligare genom att plocka upp tre skräp och slänga i rätt tunna.",
+      "ifYouWant": "Skriv \"Plockat!\" eller ladda upp en bild på skräpet i soptunnan.",
+      "icon": "lucka-03.svg",
+      "iconDescription": "En stickad vante som håller i en tom takeaway-mugg vid en papperskorg."
     },
     {
       "day": 4,
-      "title": "Uppdrag 4",
-      "description": "Uppdraget presenteras snart."
+      "title": "Kylskåpsrensning och restfest – vad blev det?",
+      "howTo": "Laga en middag eller lunchlåda på det som redan finns i kylen eller frysen för att motverka matsvinn.",
+      "ifYouWant": "Skriv vad din restfest blev (eller lägg upp en bild på tallriken/matlådan).",
+      "icon": "lucka-04.svg",
+      "iconDescription": "En kockmössa på en glasmatlåda med blandade godsaker."
     },
     {
       "day": 5,
-      "title": "Uppdrag 5",
-      "description": "Uppdraget presenteras snart."
+      "title": "Grön resdag – skippa ensambilresan",
+      "howTo": "Ta bussen, tåget, cykla, gå eller samåk till jobbet idag. Jobbar du hemma idag räknas din pendling redan som nollutsläpp!",
+      "ifYouWant": "Ange ditt färdsätt i tråden (t.ex. \"Buss linje 4\" eller \"Vinterpromenad\").",
+      "icon": "lucka-05.svg",
+      "iconDescription": "En cykel med tomteluva och reflexer."
     },
     {
       "day": 6,
-      "title": "Uppdrag 6",
-      "description": "Uppdraget presenteras snart."
+      "title": "Släck och stäng av",
+      "howTo": "Stäng av datorskärmen helt (inte bara standby), dra ur mobilladdaren ur vägguttaget och stäng fönster ordentligt innan du tar helg. Säkerställ att julstjärnor och ljusslingor stängs av under natten med timer, eller kontrollera att alla lampor är energisnåla LED.",
+      "ifYouWant": "Reagera med släckt lampa 💡, en stjärna ⭐, skriv \"Nedsläckt och klart!\" eller bekräfta att timern är inställd.",
+      "icon": "lucka-06.svg",
+      "iconDescription": "En adventsstjärna i ett fönster intill en klassisk plug-in-timer."
     },
     {
       "day": 7,
-      "title": "Uppdrag 7",
-      "description": "Uppdraget presenteras snart."
+      "title": "Testa en kollegas hack",
+      "howTo": "Bläddra tillbaka till lucka 1, välj ett av tipsen dina kollegor delade och testa det i praktiken.",
+      "ifYouWant": "Tagga kollegan vars hack du testade och skriv ett ord om hur det gick.",
+      "icon": "lucka-07.svg",
+      "iconDescription": "Två kollegor som gör en \"high five\" över en sorteringskärra."
     },
     {
       "day": 8,
-      "title": "Uppdrag 8",
-      "description": "Uppdraget presenteras snart."
+      "title": "En grön matdag (eller grön lunch)",
+      "howTo": "Välj helvegetariskt till lunch eller middag idag. Matproduktionen står för en stor del av våra utsläpp. Dela ditt godaste vegetariska recept till julbordet.",
+      "ifYouWant": "Dela namnet eller länken till receptet.",
+      "icon": "lucka-08.svg",
+      "iconDescription": "En glad morot med tomteluva."
     },
     {
       "day": 9,
-      "title": "Uppdrag 9",
-      "description": "Uppdraget presenteras snart."
+      "title": "Laga eller vårda istället för att kasta",
+      "howTo": "Sy i en lös knapp, smörj ett par vinterskor, tejpa en pärm eller avkalka kaffebryggaren på avdelningen.",
+      "ifYouWant": "Skriv en rad om vad du gav nytt liv till.",
+      "icon": "lucka-09.svg",
+      "iconDescription": "Nål, tråd och en skoborste med julrosett."
     },
     {
       "day": 10,
-      "title": "Uppdrag 10",
-      "description": "Uppdraget presenteras snart."
+      "title": "Slå in julklapp på alternativt sätt",
+      "howTo": "Skippa det plastbelagda presentpappret. Använd tidningspapper, tygspill (furoshiki), en skokartong eller återanvänt omslagspapper.",
+      "ifYouWant": "Lägg upp en bild på din inslagning eller beskriv materialet.",
+      "icon": "lucka-10.svg",
+      "iconDescription": "Ett paket inslaget i dagstidning med en grankvist under natursnöret."
     },
     {
       "day": 11,
-      "title": "Uppdrag 11",
-      "description": "Uppdraget presenteras snart."
+      "title": "Ta trapporna hela dagen – spara hissel",
+      "howTo": "Välj trapporna istället för hissen på jobbet, i kollektivtrafiken eller hemma. Sparar kilowattimmar och ger gratis puls.",
+      "ifYouWant": "Skriv hur många trappor/våningar du tog under dagen.",
+      "icon": "lucka-11.svg",
+      "iconDescription": "Kängor som tar trappsteg i språnget med snöstjärnor runt."
     },
     {
       "day": 12,
-      "title": "Uppdrag 12",
-      "description": "Uppdraget presenteras snart."
+      "title": "Favoritplats i naturen",
+      "howTo": "Ett vuxet träd kan binda stora mängder koldioxid under sin livstid och naturen ger oss värdefull återhämtning. Ta en bild på eller beskriv din favoritplats i naturen och berätta varför platsen betyder något för dig.",
+      "ifYouWant": "Dela din bild eller text i tråden.",
+      "icon": "lucka-12.svg",
+      "iconDescription": "Ett ståtligt snötäckt träd i skogsbrynet med vintersol."
     },
     {
       "day": 13,
-      "title": "Uppdrag 13",
-      "description": "Uppdraget presenteras snart."
+      "title": "Visa ditt bästa loppisfynd",
+      "howTo": "Dela med dig av något du köpt begagnat som du har haft stor glädje av genom åren.",
+      "ifYouWant": "Ladda upp en bild på fyndet i tråden.",
+      "icon": "lucka-13.svg",
+      "iconDescription": "En retro kaffekopp i porslin eller en klassisk mässingsljusstake."
     },
     {
       "day": 14,
-      "title": "Uppdrag 14",
-      "description": "Uppdraget presenteras snart."
+      "title": "Årets hållbara vana under 2026",
+      "howTo": "Reflektera över året som gått: Vilken vardagsvana har du förändrat för att minska din miljöpåverkan under 2026? Eller vad har du helt slutat göra?",
+      "ifYouWant": "Skriv din vana eller förändring i tråden för att inspirera kollegorna.",
+      "icon": "lucka-14.svg",
+      "iconDescription": "En kalender för 2026 med en grön bock och ett litet groddskott."
     },
     {
       "day": 15,
-      "title": "Uppdrag 15",
-      "description": "Uppdraget presenteras snart."
+      "title": "Dra på en kofta & sänk inomhustemperaturen",
+      "howTo": "Sänk värmen hemma 1 grad (eller ta på en extra varm tröja på kontoret). Varje sänkt grad kapar ca 5 % av uppvärmningsenergin.",
+      "ifYouWant": "Reagera med en tröja 🧶 eller skriv vilken din varmaste favorittröja är.",
+      "icon": "lucka-15.svg",
+      "iconDescription": "En stickad ylletröja med renmönster."
     },
     {
       "day": 16,
-      "title": "Uppdrag 16",
-      "description": "Uppdraget presenteras snart."
+      "title": "Utmana dig med en köpfri vecka",
+      "howTo": "Konsumtion står för stora klimatutsläpp. Lova dig själv att genomföra en ”köpfri vecka” under kommande år, där du pausar all shopping utom helt nödvändiga basvaror.",
+      "ifYouWant": "Skriv ”Jag antar utmaningen!” i tråden eller berätta vilken månad du siktar på att genomföra den.",
+      "icon": "lucka-16.svg",
+      "iconDescription": "En plånbok sammanbunden med ett grönt sidenband och en grankvist."
     },
     {
       "day": 17,
-      "title": "Uppdrag 17",
-      "description": "Uppdraget presenteras snart."
+      "title": "Visa din bästa second hand-försäljning",
+      "howTo": "Cirkulärt tänk går åt båda hållen! Berätta om en sak du sålt eller skänkt vidare som fick nytt liv hos någon annan.",
+      "ifYouWant": "Dela en bild eller en kort mening om vad du blev av med.",
+      "icon": "lucka-17.svg",
+      "iconDescription": "En återanvänd kartong med adresslapp och en glad smiley."
     },
     {
       "day": 18,
-      "title": "Uppdrag 18",
-      "description": "Uppdraget presenteras snart."
+      "title": "Koka med lock & eftervärme",
+      "howTo": "Lägg alltid lock på kastrullen, använd vattenkokare för att koka upp vatten, och stäng av plattan/ugnen några minuter innan maten är klar.",
+      "ifYouWant": "Reagera med en gryta 🍲 eller skriv ditt bästa köksenergitips.",
+      "icon": "lucka-18.svg",
+      "iconDescription": "En kastrull med ångande lock och en timer."
     },
     {
       "day": 19,
-      "title": "Uppdrag 19",
-      "description": "Uppdraget presenteras snart."
+      "title": "Byt ut en engångsartikel",
+      "howTo": "Ersätt plastfolie med en uppochnervänd tallrik/bivaxduk, skippa hushållspapperet till förmån för disktrasan, eller ta med en egen termosmugg.",
+      "ifYouWant": "Skriv vilken engångspryl du lyckats fasa ut.",
+      "icon": "lucka-19.svg",
+      "iconDescription": "En bivaxduk runt en fruktskål och en termos i rostfritt stål."
     },
     {
       "day": 20,
-      "title": "Uppdrag 20",
-      "description": "Uppdraget presenteras snart."
+      "title": "Låna istället för att köpa nytt",
+      "howTo": "Behöver du slagborr, extra stolar till julbordet eller en finkavaj? Låna av en granne, kollega eller Fritidsbanken.",
+      "ifYouWant": "Skriv vad du nyligen lånat – eller vad du gärna lånar ut till kollegorna.",
+      "icon": "lucka-20.svg",
+      "iconDescription": "Två händer som räcker över en verktygslåda med en rosett."
     },
     {
       "day": 21,
-      "title": "Uppdrag 21",
-      "description": "Uppdraget presenteras snart."
+      "title": "Skolkontorets gröna idé för nästa år",
+      "howTo": "Tänk på hur skolkontoret fungerar i vardagen. Ge ett förslag på en konkret miljöförbättring som arbetsplatsen kan genomföra under nästa år.",
+      "ifYouWant": "Skriv ditt förslag i tråden.",
+      "icon": "lucka-21.svg",
+      "iconDescription": "Ett anteckningsblock med en glödlampa och en kontorsbyggnad med solceller på taket."
     },
     {
       "day": 22,
-      "title": "Uppdrag 22",
-      "description": "Uppdraget presenteras snart."
+      "title": "Grönt nyårslöfte & personligt miljömål för 2027",
+      "howTo": "Skriv ett grönt nyårslöfte eller sätt upp ett personligt miljömål för 2027 (t.ex. minska matsvinnet, cykla oftare eller konsumera mer återbruk). Välj gärna en hållbar vana du vill testa redan i januari och skriv ner hur du ska lyckas.",
+      "ifYouWant": "Dela ditt löfte eller ditt mål i tråden.",
+      "icon": "lucka-22.svg",
+      "iconDescription": "En stjärnhimmel med en spirande grön planta i förgrunden."
     },
     {
       "day": 23,
-      "title": "Uppdrag 23",
-      "description": "Uppdraget presenteras snart."
+      "title": "Skriv en skarp inköpslista mot julmatsvinn",
+      "howTo": "Planera storhandlingen noga så att mat inte köps på måfå och hamnar i soporna efter annandagen.",
+      "ifYouWant": "Skriv ditt bästa knep för att ta hand om julbordsresterna.",
+      "icon": "lucka-23.svg",
+      "iconDescription": "Ett block med en prydlig handskriven lista och en grankvist."
     },
     {
       "day": 24,
-      "title": "Uppdrag 24",
-      "description": "Uppdraget presenteras snart."
+      "title": "Skänk omtanke – en gåva utan klimatavtryck",
+      "howTo": "Skänk en slant till en miljöorganisation, bjud en ensam granne på fika eller skicka ett omtänksamt sms till någon du inte pratat med på länge.",
+      "ifYouWant": "Önska god jul i tråden när du utfört din handling!",
+      "icon": "lucka-24.svg",
+      "iconDescription": "Ett hjärta format av grankvistar, kottar och lingonris."
     }
   ]
 }

@@ -25,7 +25,8 @@
     "build": "vite build && tsc -p tsconfig.build.json",
     "start": "node dist/src/api/main.js",
     "smoke": "node scripts/smoke.ts",
-    "gdpr:purge": "node --env-file-if-exists=.env scripts/gdpr-purge.ts"
+    "gdpr:purge": "node --env-file-if-exists=.env scripts/gdpr-purge.ts",
+    "puzzle:cut": "node scripts/cut-puzzle.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.14",

@@ -57,7 +57,9 @@ erDiagram
     int id PK
     smallint day UK
     text title
-    text description
+    text how_to
+    text if_you_want
+    text icon
     timestamptz updated_at
   }
   completions {
