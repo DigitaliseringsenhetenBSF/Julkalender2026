@@ -27,7 +27,7 @@ export async function boardRoutes(app: FastifyInstance, ctx: AppContext): Promis
         .update(readFileSync(join(PIECES_DIR, basename(p.file))))
         .digest('hex')
         .slice(0, 12);
-      return [p.id, `/api/pieces/${p.id}/image?v=${hash}`];
+      return [p.id, `${ctx.config.basePath}/api/pieces/${p.id}/image?v=${hash}`];
     }),
   );
   // Shapes and image URLs only travel with pieces on the user's board, i.e. already unlocked.

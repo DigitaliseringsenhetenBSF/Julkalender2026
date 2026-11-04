@@ -10,6 +10,14 @@ import { ROOT_DIR } from '../data/paths.ts';
 
 export type AppEnv = 'development' | 'test' | 'staging' | 'production';
 
+/**
+ * Who identifies the person (SPEC §8):
+ * - `dev`: the test-user picker; refused in production.
+ * - `portal`: Verktygsportalen's login. The portal proxies the calendar under BASE_PATH and
+ *   vouches for the signed-in person in request headers, authenticated by PORTAL_KEY.
+ */
+export type AuthMode = 'dev' | 'portal';
+
 export interface AppConfig {
   appEnv: AppEnv;
   port: number;
@@ -18,13 +26,18 @@ export interface AppConfig {
   pgliteDir: string;
   sessionSecret: string;
   secureCookies: boolean;
-  authMode: 'dev';
+  authMode: AuthMode;
+  /** The shared secret the portal's proxy sends; set only in portal mode. */
+  portalKey: string | undefined;
+  /** The path the app is served under, '' at the root or e.g. '/julkalender' (no trailing slash). */
+  basePath: string;
   fakeToday: string | undefined;
   seedDemo: boolean;
 }
 
 const DEV_SESSION_SECRET = 'development-only-session-secret-do-not-use-in-staging';
 const MIN_SECRET_LENGTH = 32;
+const BASE_PATH_PATTERN = /^(\/[a-z0-9-]+)+$/;
 
 // Treat empty strings (e.g. "DATABASE_URL=" in .env) as unset.
 const optionalString = z.preprocess((v) => (v === '' ? undefined : v), z.string().optional());
@@ -36,7 +49,9 @@ const envSchema = z.object({
   DATABASE_URL: optionalString,
   PGLITE_DIR: optionalString,
   SESSION_SECRET: optionalString,
-  AUTH_MODE: z.enum(['dev']).default('dev'),
+  AUTH_MODE: z.enum(['dev', 'portal']).default('dev'),
+  PORTAL_KEY: optionalString,
+  BASE_PATH: optionalString,
   FAKE_TODAY: optionalString,
   SEED_DEMO: optionalString,
 });
@@ -63,7 +78,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   if (isProduction && e.AUTH_MODE === 'dev') {
     throw new ConfigError(
-      'AUTH_MODE=dev is not allowed in production. Real sign-in must be implemented first.',
+      'AUTH_MODE=dev is not allowed in production. Run behind Verktygsportalen with AUTH_MODE=portal.',
+    );
+  }
+  // The key is what makes a portal header trustworthy, so portal mode never runs without one,
+  // not even locally: an open portal mode would let anyone claim any identity.
+  if (e.AUTH_MODE === 'portal' && (!e.PORTAL_KEY || e.PORTAL_KEY.length < MIN_SECRET_LENGTH)) {
+    throw new ConfigError(
+      `PORTAL_KEY of at least ${MIN_SECRET_LENGTH} characters is required when AUTH_MODE=portal.`,
+    );
+  }
+  if (e.BASE_PATH && !BASE_PATH_PATTERN.test(e.BASE_PATH)) {
+    throw new ConfigError(
+      'BASE_PATH must be empty or a path such as /julkalender (lower-case letters, digits and hyphens, no trailing slash).',
     );
   }
   if (!isLocal && !e.DATABASE_URL) {
@@ -89,6 +116,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionSecret: e.SESSION_SECRET ?? DEV_SESSION_SECRET,
     secureCookies: !isLocal,
     authMode: e.AUTH_MODE,
+    portalKey: e.AUTH_MODE === 'portal' ? e.PORTAL_KEY : undefined,
+    basePath: e.BASE_PATH ?? '',
     fakeToday: e.FAKE_TODAY,
     seedDemo,
   };

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApiUser } from '../shared/contract.ts';
+import type { ApiUser, AuthMode } from '../shared/contract.ts';
 import { ApiCallError, api } from './api.ts';
 import { DevSignIn } from './components/DevSignIn.tsx';
 import { Header } from './components/Header.tsx';
@@ -10,21 +10,33 @@ import { errorMessage, sv } from './texts.sv.ts';
 import { useCampaign } from './useCampaign.ts';
 
 type AuthState =
-  { status: 'loading' } | { status: 'signedOut' } | { status: 'signedIn'; user: ApiUser };
+  | { status: 'loading' }
+  | { status: 'failed' }
+  /** No signed-in person. `portal`: the portal's login is the way in, not the test-user picker. */
+  | { status: 'signedOut'; portal: boolean }
+  | { status: 'signedIn'; user: ApiUser; authMode: AuthMode };
 
 export function App() {
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' });
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setAuth({ status: 'loading' });
     api
       .me()
-      .then(({ user }) => setAuth({ status: 'signedIn', user }))
-      .catch(() => setAuth({ status: 'signedOut' }));
+      .then(({ user, authMode }) => setAuth({ status: 'signedIn', user, authMode }))
+      .catch((error: unknown) => {
+        const code = error instanceof ApiCallError ? error.code : null;
+        if (code === 'PORTAL_SIGN_IN') setAuth({ status: 'signedOut', portal: true });
+        else if (code === 'UNAUTHENTICATED') setAuth({ status: 'signedOut', portal: false });
+        else setAuth({ status: 'failed' });
+      });
   }, []);
+
+  useEffect(load, [load]);
 
   const signOut = useCallback(async () => {
     await api.logout().catch(() => undefined);
-    setAuth({ status: 'signedOut' });
+    setAuth({ status: 'signedOut', portal: false });
   }, []);
 
   if (auth.status === 'loading') {
@@ -34,22 +46,54 @@ export function App() {
       </p>
     );
   }
+  if (auth.status === 'failed') {
+    return (
+      <main id="main" className="page-status">
+        <p role="alert">{sv.loadError}</p>
+        <button type="button" className="button button--secondary" onClick={load}>
+          {sv.retry}
+        </button>
+      </main>
+    );
+  }
   if (auth.status === 'signedOut') {
-    return <DevSignIn onSignedIn={(user) => setAuth({ status: 'signedIn', user })} />;
+    return auth.portal ? (
+      <PortalSignIn />
+    ) : (
+      <DevSignIn onSignedIn={(user) => setAuth({ status: 'signedIn', user, authMode: 'dev' })} />
+    );
   }
   return (
     <CalendarPage
       user={auth.user}
-      onSignOut={signOut}
-      onSessionLost={() => setAuth({ status: 'signedOut' })}
+      // Behind the portal there is no session of our own to end: the portal's logout is the way.
+      onSignOut={auth.authMode === 'dev' ? signOut : null}
+      onSessionLost={load}
     />
+  );
+}
+
+/** Portal mode without a signed-in person: the portal's address is the only way in. */
+function PortalSignIn() {
+  return (
+    <main id="main" className="signin">
+      <div className="card signin__card">
+        <p className="eyebrow">{sv.appName}</p>
+        <h1>{sv.portalSignIn.title}</h1>
+        <p>{sv.portalSignIn.lead}</p>
+      </div>
+    </main>
   );
 }
 
 /** How long the visual toast stays (the live region announcement is separate). */
 const TOAST_MS = 5000;
 
-function CalendarPage(props: { user: ApiUser; onSignOut: () => void; onSessionLost: () => void }) {
+function CalendarPage(props: {
+  user: ApiUser;
+  onSignOut: (() => void) | null;
+  onSessionLost: () => void;
+}) {
   const { calendar, progress, loadFailed, reload, setCompletion, openLucka } = useCampaign(
     props.onSessionLost,
   );

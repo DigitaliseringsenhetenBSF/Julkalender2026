@@ -18,6 +18,14 @@ export async function findUserById(db: Queryable, id: number): Promise<User | nu
   return user ?? null;
 }
 
+export async function findUserByExternalId(
+  db: Queryable,
+  externalId: string,
+): Promise<User | null> {
+  const [user] = await db.query<User>(`${SELECT_USER} WHERE external_id = $1`, [externalId]);
+  return user ?? null;
+}
+
 export async function listDevUsers(db: Queryable): Promise<User[]> {
   return db.query<User>(`${SELECT_USER} WHERE external_id LIKE $1 ORDER BY role DESC, id`, [
     `${DEV_USER_PREFIX}%`,
@@ -38,4 +46,18 @@ export async function upsertUser(
   );
   if (!user) throw new Error('upsertUser returned no row');
   return user;
+}
+
+/**
+ * The user behind an identity the provider vouches for on every request (portal mode): read
+ * first, write only on the first visit or when the name has changed, so a page load does not
+ * cost a write per call.
+ */
+export async function ensureUser(
+  db: Queryable,
+  identity: { externalId: string; displayName: string },
+): Promise<User> {
+  const existing = await findUserByExternalId(db, identity.externalId);
+  if (existing && existing.displayName === identity.displayName) return existing;
+  return upsertUser(db, identity);
 }

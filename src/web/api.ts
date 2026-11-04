@@ -56,18 +56,24 @@ async function request<T extends z.ZodType>(
   return (schema ? schema.parse(json) : undefined) as z.infer<T>;
 }
 
+/** The path the app is served under ('' at the root, '/julkalender' behind the portal). */
+export const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 export const api = {
-  me: () => request(meResponse, 'GET', '/api/me'),
-  devUsers: () => request(devUsersResponse, 'GET', '/api/dev-auth/users'),
+  me: () => request(meResponse, 'GET', `${BASE_PATH}/api/me`),
+  devUsers: () => request(devUsersResponse, 'GET', `${BASE_PATH}/api/dev-auth/users`),
   devLogin: (userId: number) =>
-    request(devLoginResponse, 'POST', '/api/dev-auth/login', { userId }),
-  logout: () => request(null, 'POST', '/api/auth/logout'),
-  calendar: () => request(calendarResponse, 'GET', '/api/calendar'),
-  progress: () => request(progressSchema, 'GET', '/api/progress'),
-  tick: (day: number) => request(completionResponse, 'POST', '/api/completions', { day }),
-  untick: (day: number) => request(completionResponse, 'DELETE', `/api/completions/${day}`),
-  openLucka: (day: number) => request(openingResponse, 'POST', '/api/openings', { day }),
-  board: () => request(boardResponse, 'GET', '/api/board'),
+    request(devLoginResponse, 'POST', `${BASE_PATH}/api/dev-auth/login`, { userId }),
+  logout: () => request(null, 'POST', `${BASE_PATH}/api/auth/logout`),
+  calendar: () => request(calendarResponse, 'GET', `${BASE_PATH}/api/calendar`),
+  progress: () => request(progressSchema, 'GET', `${BASE_PATH}/api/progress`),
+  tick: (day: number) =>
+    request(completionResponse, 'POST', `${BASE_PATH}/api/completions`, { day }),
+  untick: (day: number) =>
+    request(completionResponse, 'DELETE', `${BASE_PATH}/api/completions/${day}`),
+  openLucka: (day: number) =>
+    request(openingResponse, 'POST', `${BASE_PATH}/api/openings`, { day }),
+  board: () => request(boardResponse, 'GET', `${BASE_PATH}/api/board`),
   movePiece: (id: number, body: MovePieceRequest) =>
-    request(movePieceResponse, 'PUT', `/api/board/pieces/${id}`, body),
+    request(movePieceResponse, 'PUT', `${BASE_PATH}/api/board/pieces/${id}`, body),
 };

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ApiMission, CalendarResponse } from '../../shared/contract.ts';
+import { BASE_PATH } from '../api.ts';
 import { sv } from '../texts.sv.ts';
 
 interface MissionGridProps {
@@ -73,7 +74,7 @@ interface LuckaProps {
 
 /** The lucka's icon, drawn in the current text colour (the SVG file is used as a mask). */
 function LuckaIcon({ file, className }: { file: string; className: string }) {
-  const url = `url("/icons/${file}")`;
+  const url = `url("${BASE_PATH}/icons/${file}")`;
   return (
     <span
       className={`lucka-icon ${className}`}

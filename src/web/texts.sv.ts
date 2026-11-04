@@ -53,6 +53,11 @@ export const sv = {
     error: 'Inloggningen misslyckades. Försök igen.',
   },
 
+  portalSignIn: {
+    title: 'Öppna kalendern via Verktygsportalen',
+    lead: 'Kalendern nås inloggad i Verktygsportalen, på adressen du har fått. Logga in där och öppna adressen igen.',
+  },
+
   intro: {
     title: 'Så funkar Miljöjulkalendern',
     items: (o: {
@@ -159,7 +164,7 @@ export const sv = {
   privacy: {
     heading: 'Om dina uppgifter',
     paragraphs: [
-      'Vi sparar ditt namn, vilka luckor du har öppnat, vilka uppdrag du har bockat av och var du har lagt dina pusselbitar – inget annat.',
+      'Vi sparar vem du är (namn och e-postadress från inloggningen), vilka luckor du har öppnat, vilka uppdrag du har bockat av och var du har lagt dina pusselbitar – inget annat.',
       'Ingen annan kan se dina uppgifter. Andra ser bara summan för hela Skolkontoret.',
       'Uppgifterna raderas efter kampanjen, senast 31 januari 2027.',
     ],

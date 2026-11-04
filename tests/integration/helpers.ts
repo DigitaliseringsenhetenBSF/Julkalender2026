@@ -34,13 +34,15 @@ export interface TestServer {
 }
 
 /** A fresh app on an in-memory PGlite database, migrated and seeded (no web build). */
-export async function startTestServer(options: { today?: string } = {}): Promise<TestServer> {
-  const config = loadConfig({ APP_ENV: 'test', PGLITE_DIR: 'memory://' });
+export async function startTestServer(
+  options: { today?: string; env?: NodeJS.ProcessEnv; webDistDir?: string } = {},
+): Promise<TestServer> {
+  const config = loadConfig({ APP_ENV: 'test', PGLITE_DIR: 'memory://', ...options.env });
   const db = await createPgliteDb('memory://');
   const clock = testClock(options.today ?? '2026-12-10');
   const ctx = createContext({ config, db, content: loadContent(), clock, random: mulberry32(42) });
   await prepareDatabase(ctx);
-  const app = await buildApp(ctx, { webDistDir: '/nonexistent' });
+  const app = await buildApp(ctx, { webDistDir: options.webDistDir ?? '/nonexistent' });
   return {
     app,
     ctx,

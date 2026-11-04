@@ -32,6 +32,9 @@ flowchart LR
   UI -. shares .-> DOMAIN
 ```
 
+In production the browser does not reach the service directly: Verktygsportalen's proxy serves
+it under `/julkalender` and adds the identity headers the auth seam reads (SPEC §8).
+
 The domain layer has no framework or database imports. Both the server (authoritative) and the
 client (instant feedback, for example snapping) use it.
 

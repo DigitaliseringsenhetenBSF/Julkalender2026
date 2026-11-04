@@ -264,34 +264,52 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 8. Identity and access
 
-- **Current (temporary): `AUTH_MODE=dev`.**
+- **Local: `AUTH_MODE=dev`.**
   - A test-user picker signs in as a seeded test user, using a signed, httpOnly session cookie.
-  - The server **refuses to start** with `AUTH_MODE=dev` when `APP_ENV=production`, so production
-    cannot run until real sign-in exists. This is deliberate: there is no "temporary bypass".
-- **Planned:** Real sign-in is decided later (open question Q1). The auth module exposes one seam:
+  - The server **refuses to start** with `AUTH_MODE=dev` when `APP_ENV=production`. This is
+    deliberate: there is no "temporary bypass".
+- **Production: `AUTH_MODE=portal`** (decided 2026-11-04 by the portal's owner, Q1/Q17). The
+  calendar runs as a private service behind **Verktygsportalen**, which serves it under
+  `BASE_PATH` (`/julkalender`) through a proxy that only a signed-in person gets past. The proxy
+  vouches for the person on every request in `x-portal-user` (verified e-mail) and
+  `x-portal-name` (display name, percent-encoded), and proves it is the proxy with
+  `x-portal-key` = `PORTAL_KEY` (32+ characters, shared with the portal). `src/api/auth/portalAuth.ts`
+  accepts an identity only with the right key; `users.external_id` is `portal:<e-mail>`. No cookie
+  of our own, no "Logga ut": the portal's session and logout are the ones that count. Without a
+  signed-in person `/api/me` answers `401 PORTAL_SIGN_IN` and the page says to open the calendar
+  via the portal.
+  - Who may take part: everyone behind the portal's login who has the address. The calendar is
+    listed nowhere in the portal (a hidden entry), so the address is what is handed out.
+- The auth module exposes one seam, whichever provider is used:
   - identify the user;
   - upsert `users` by `external_id`;
-  - set the session.
+  - set `request.user` (dev mode through the cookie; portal mode from the headers, every request).
 
   Every other route only sees `request.user`.
 
-- All `/api/*` routes except `/api/dev-auth/*` require a session (`401 UNAUTHENTICATED`).
+- All `/api/*` routes except `/api/dev-auth/*` require a signed-in person (`401 UNAUTHENTICATED`,
+  or `401 PORTAL_SIGN_IN` in portal mode).
 - Admin routes, when added, require `role = admin` (`403 FORBIDDEN`).
 
 ## 9. GDPR
 
 - **Data stored:**
-  - stable user identifier (`external_id`) and display name;
+  - stable user identifier (`external_id`) and display name — in portal mode the identifier is
+    the person's e-mail address from the portal's login (`portal:<e-mail>`), and the display name
+    is the name the login gave;
   - completions with timestamps;
   - which luckor the user has opened, with timestamps;
   - piece positions.
 
-  Nothing else: no e-mail, no IP logging in the app database.
+  Nothing else: no IP logging in the app database. The e-mail address is the one piece of
+  contact data, and it is there because the portal identifies people by it.
 
 - **Visibility:** No individual data is visible to other users.
 - **Legal basis:** **[unknown]**, see Q16. Likely public interest/official authority for staff
   engagement, to be confirmed by BSF's dataskyddsombud.
-- **Retention:** until the purge, at the latest **2027-01-31** (proposed).
+- **Retention:** until the purge, at the latest **2027-01-31** (proposed). The portal's owner
+  decided on 2026-11-04 that the whole calendar is taken down in early January 2027 — service
+  and database deleted — which ends the retention earlier than the purge would.
 - **Purge:** `npm run gdpr:purge -- --confirm`. In a single transaction it:
   - writes anonymous per-lucka aggregates to `campaign_summary`;
   - deletes `board_pieces`, `lucka_openings`, `completions` and `users`.
@@ -372,7 +390,7 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 | #   | Question                                                         | Default / proposal                                                                                                                                                                                                                      | Owner                | Status                                      |
 | --- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------- |
-| Q1  | How do users sign in?                                            | Microsoft Entra ID (M365 SSO). Fallback if IT lead time is too long: personal magic links by e-mail.                                                                                                                                    | Campaign owner + IT  | **Open – deferred by owner**                |
+| Q1  | How do users sign in?                                            | Verktygsportalen's login, through its proxy (`AUTH_MODE=portal`, §8). Entra ID or magic links are not needed.                                                                                                                           | Portal owner         | **Decided 2026-11-04**                      |
 | Q2  | Who counts as Skolkontoret staff, and how many?                  | ~30–60 participants                                                                                                                                                                                                                     | Campaign owner       | Answered (approx.)                          |
 | Q3  | Who is admin, and how do they sign in?                           | Digitaliseringsenheten; same sign-in + `role = admin`                                                                                                                                                                                   | Campaign owner       | Open                                        |
 | Q4  | Piece count / threshold                                          | 45 pieces (9 × 5) × 10 = 450 completions. With 30–60 people at ~40 % → roughly 290–580 completions, so the picture may be completed close to 24 Dec or during catch-up.                                                                 | Campaign owner       | **Decided 2026-11-04**                      |
@@ -388,7 +406,7 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 | Q14 | Puzzle image rights                                              | AI-generated by the campaign owner with a style reference; the owner considers it cleared. Check that the AI tool's terms allow the municipality's use, and do not name the referenced artist or brand in the app or in communications. | Campaign owner       | **Decided 2026-11-04** (owner's assessment) |
 | Q15 | Which statistics?                                                | As §6; no per-person data to others                                                                                                                                                                                                     | Campaign owner       | Proposed                                    |
 | Q16 | GDPR legal basis, info text, retention                           | Purge by 2027-01-31; keep anonymous aggregates                                                                                                                                                                                          | Campaign owner + DSO | Open                                        |
-| Q17 | Standalone Render service or verktygsportal page?                | Standalone service (deadline, separate auth)                                                                                                                                                                                            | Campaign owner       | Proposed                                    |
+| Q17 | Standalone Render service or verktygsportal page?                | A private Render service behind Verktygsportalen at `/julkalender`, hidden (no card); taken down in early January 2027                                                                                                                  | Portal owner         | **Decided 2026-11-04**                      |
 | Q18 | URL/domain                                                       | `*.onrender.com` unless a lund.se subdomain is required                                                                                                                                                                                 | Campaign owner + IT  | Open                                        |
 | Q19 | Lund graphic profile assets                                      | Needed (colours, fonts, logo usage)                                                                                                                                                                                                     | Campaign owner       | Open                                        |
 | Q20 | Big-screen "tillsammans" view?                                   | Not in this increment                                                                                                                                                                                                                   | Campaign owner       | Open                                        |
@@ -399,20 +417,21 @@ ER diagram: see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 15. Decisions log
 
-| Date       | Decision                                                                                                                 | Why                                                     | Alternatives                                       |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------------------------------- |
-| 2026-11-03 | Stack: TypeScript, Fastify, zod, PostgreSQL (PGlite locally), React + Vite, Vitest, Playwright                           | One language, boring tech, no Docker needed locally     | Python/FastAPI; verktygsportal module              |
-| 2026-11-03 | Plain SQL + small adapter, numbered migrations                                                                           | Auditable, no ORM to learn                              | Drizzle, Kysely                                    |
-| 2026-11-03 | Temporary `AUTH_MODE=dev`, refused in production                                                                         | Owner deferred sign-in; never bypass auth in production | Shared campaign code                               |
-| 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces (threshold and pieces changed 2026-11-04)            | Owner answers                                           | –                                                  |
-| 2026-11-03 | Piece images gated by unlock; the source image is never served                                                           | Keep the picture a surprise                             | Serve all statically                               |
-| 2026-11-03 | Luckor are doors that turn over and stay open (server-stored); per-uppdrag counts on each lucka; per-lucka chart removed | Campaign owner's request                                | Plain list with checkboxes; client-only open state |
-| 2026-11-03 | Clean page: remove the "Dagens uppdrag", "Tillsammans" and Statistik cards; privacy text becomes a discreet footer link  | Campaign owner wants a stilren service                  | Keep the cards                                     |
-| 2026-11-03 | ~~Snapped pieces lock~~ – replaced 2026-11-04 by "no help"                                                               | –                                                       | –                                                  |
-| 2026-11-04 | Missions from "24 uppdrag.docx": title, Gör så här, Om du vill, icon (migration 003)                                     | Owner's content                                         | –                                                  |
-| 2026-11-04 | Puzzle: 45 classic jigsaw pieces (9 × 5) from Vinterfest, cut in Chromium by a script (no new dependency)                | Owner's request; 40–70 pieces                           | Pillow/sharp; 60 or 66 pieces                      |
-| 2026-11-04 | Threshold 10 completions per piece                                                                                       | Owner's choice                                          | Keep 15; ~8 (360 total)                            |
-| 2026-11-04 | No snapping, locking or hints in the puzzle                                                                              | Owner: the builder gets no help                         | Snap to slot                                       |
+| Date       | Decision                                                                                                                                                                                     | Why                                                                          | Alternatives                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------- |
+| 2026-11-03 | Stack: TypeScript, Fastify, zod, PostgreSQL (PGlite locally), React + Vite, Vitest, Playwright                                                                                               | One language, boring tech, no Docker needed locally                          | Python/FastAPI; verktygsportal module              |
+| 2026-11-03 | Plain SQL + small adapter, numbered migrations                                                                                                                                               | Auditable, no ORM to learn                                                   | Drizzle, Kysely                                    |
+| 2026-11-03 | Temporary `AUTH_MODE=dev`, refused in production                                                                                                                                             | Owner deferred sign-in; never bypass auth in production                      | Shared campaign code                               |
+| 2026-11-03 | Un-tick allowed; close 2027-01-10; threshold 15; 24 provided pieces (threshold and pieces changed 2026-11-04)                                                                                | Owner answers                                                                | –                                                  |
+| 2026-11-03 | Piece images gated by unlock; the source image is never served                                                                                                                               | Keep the picture a surprise                                                  | Serve all statically                               |
+| 2026-11-03 | Luckor are doors that turn over and stay open (server-stored); per-uppdrag counts on each lucka; per-lucka chart removed                                                                     | Campaign owner's request                                                     | Plain list with checkboxes; client-only open state |
+| 2026-11-03 | Clean page: remove the "Dagens uppdrag", "Tillsammans" and Statistik cards; privacy text becomes a discreet footer link                                                                      | Campaign owner wants a stilren service                                       | Keep the cards                                     |
+| 2026-11-03 | ~~Snapped pieces lock~~ – replaced 2026-11-04 by "no help"                                                                                                                                   | –                                                                            | –                                                  |
+| 2026-11-04 | Missions from "24 uppdrag.docx": title, Gör så här, Om du vill, icon (migration 003)                                                                                                         | Owner's content                                                              | –                                                  |
+| 2026-11-04 | Puzzle: 45 classic jigsaw pieces (9 × 5) from Vinterfest, cut in Chromium by a script (no new dependency)                                                                                    | Owner's request; 40–70 pieces                                                | Pillow/sharp; 60 or 66 pieces                      |
+| 2026-11-04 | Threshold 10 completions per piece                                                                                                                                                           | Owner's choice                                                               | Keep 15; ~8 (360 total)                            |
+| 2026-11-04 | No snapping, locking or hints in the puzzle                                                                                                                                                  | Owner: the builder gets no help                                              | Snap to slot                                       |
+| 2026-11-04 | Runs behind Verktygsportalen: a private service, the portal's login as identity (`AUTH_MODE=portal`), served under `/julkalender`, listed nowhere; taken down entirely in early January 2027 | Portal owner: only people with the address, not every portal user; temporary | Own Render site with Entra ID or magic links       |
 
 ## 16. Engineering conventions (the six core areas)
 

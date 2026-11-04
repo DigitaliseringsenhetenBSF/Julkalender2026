@@ -106,17 +106,39 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
   - the banner below the board stays;
   - covered by e2e, including axe with the dialog open.
 
+## Phase 7 – Behind Verktygsportalen (2026-11-04)
+
+Decided by the portal's owner: the calendar goes into the portal's development lab as a hidden
+tool — only people with the address, not every portal user — and is taken down entirely in
+early January 2027.
+
+- [x] **`AUTH_MODE=portal`** (`src/api/auth/portalAuth.ts`): identity from the proxy's headers,
+      authenticated by `PORTAL_KEY`; users as `portal:<e-mail>`; no cookie, no "Logga ut";
+      `401 PORTAL_SIGN_IN` and a page that points to the portal without a person. AC: the key is
+      required even locally; a wrong key is `UNAUTHENTICATED`; the same address keeps its id and
+      gets its new name; the dev picker does not exist in this mode (`tests/integration/portal.test.ts`,
+      `tests/unit/config.test.ts`).
+- [x] **`BASE_PATH`** for the API, icons, piece images and the web build (Vite `base`);
+      `/health` stays at the root. AC: everything answers under `/julkalender`, nothing outside it.
+- [x] **`render.yaml`**: a private service in portal mode with its own database.
+- [ ] **Create in Render** (the portal's owner): database, service with `PORTAL_KEY`, then
+      `JULKALENDER_URL` and `JULKALENDER_KEY` on the portal's web service.
+- [ ] **Take down in early January 2027**: delete the service and the database in Render, and the
+      hidden entry in the portal's registry. The GDPR purge is not needed when the database goes.
+
 ## Later phases (need decisions or material)
 
-- [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in
-      production.
+- [x] ~~**Real sign-in** (Q1). Entra ID app registration with IT, or magic links.~~ Replaced by
+      the portal's login (Phase 7).
 - [ ] **Admin UI** (Q3): edit missions, view statistics, preview any date, trigger the purge with
       confirmation.
 - [ ] **Real mission texts** from the campaign owner (Q12/Q13), then content freeze.
 - [ ] **Lund graphic profile** (Q19): replace `tokens.css` values and add the logo if allowed.
 - [ ] **GDPR information text and legal basis** approved (Q16).
 - [ ] **GitHub repo** in `DigitaliseringsenhetenBSF` (ask first).
-- [ ] **Render staging**, then pilot group (16–20 Nov) and production (by 30 Nov) (ask first).
+- [ ] ~~**Render staging**, then pilot group (16–20 Nov) and production (by 30 Nov) (ask first).~~
+      The portal's lab is the pilot; a staging with `AUTH_MODE=dev` and `FAKE_TODAY` would be a
+      second service.
 - [ ] **Re-run the concurrency test** against Render Postgres.
 - [ ] **Tillgänglighetsredogörelse** (Q21).
 

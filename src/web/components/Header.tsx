@@ -4,7 +4,8 @@ import { sv } from '../texts.sv.ts';
 interface HeaderProps {
   user: ApiUser;
   simulatedToday: string | null;
-  onSignOut: () => void;
+  /** null when the sign-in is not ours to end (portal mode). */
+  onSignOut: (() => void) | null;
 }
 
 export function Header({ user, simulatedToday, onSignOut }: HeaderProps) {
@@ -23,9 +24,11 @@ export function Header({ user, simulatedToday, onSignOut }: HeaderProps) {
           </div>
           <div className="site-user">
             <span className="muted">{sv.signedInAs(user.displayName)}</span>
-            <button type="button" className="button button--ghost" onClick={onSignOut}>
-              {sv.signOut}
-            </button>
+            {onSignOut && (
+              <button type="button" className="button button--ghost" onClick={onSignOut}>
+                {sv.signOut}
+              </button>
+            )}
           </div>
         </div>
       </header>

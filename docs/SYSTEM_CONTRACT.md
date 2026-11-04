@@ -9,7 +9,9 @@ in sync.
 
 - JSON in and out. Mutating requests must send `Content-Type: application/json`.
 - Session: signed, httpOnly cookie `mjk_session` (`SameSite=Lax`; `Secure` outside development and
-  test).
+  test) in dev mode. In portal mode (`AUTH_MODE=portal`) there is no cookie: every request is
+  identified from the portal proxy's headers (`x-portal-key`, `x-portal-user`, `x-portal-name`).
+- Base path: with `BASE_PATH=/julkalender` every path below except `/health` is prefixed with it.
 - Errors always have this shape:
 
   ```json
@@ -23,7 +25,8 @@ in sync.
 | HTTP | code               | When                                                                |
 | ---- | ------------------ | ------------------------------------------------------------------- |
 | 400  | `VALIDATION_ERROR` | Body or params fail the schema                                      |
-| 401  | `UNAUTHENTICATED`  | No or invalid session                                               |
+| 401  | `UNAUTHENTICATED`  | No or invalid session; in portal mode a missing or wrong portal key |
+| 401  | `PORTAL_SIGN_IN`   | Portal mode: the request carried no signed-in person                |
 | 403  | `FORBIDDEN`        | Authenticated but lacks role (admin routes, future)                 |
 | 404  | `NOT_FOUND`        | Unknown route/resource, piece not (yet) unlocked, dev-auth disabled |
 | 409  | `MISSION_LOCKED`   | Tick-off/un-tick of a lucka that is not open yet                    |
@@ -43,6 +46,16 @@ in sync.
 ```json
 { "user": { "id": 1, "displayName": "Testanvändare 1", "role": "user" }, "authMode": "dev" }
 ```
+
+`authMode` is `"dev"` or `"portal"`. In portal mode the client shows no "Logga ut".
+
+### Portal sign-in (only when `AUTH_MODE=portal`)
+
+No endpoint: the identity travels in request headers set by Verktygsportalen's proxy and is
+checked on every protected call. `x-portal-key` must equal the service's `PORTAL_KEY`
+(otherwise `401 UNAUTHENTICATED`); `x-portal-user` is the person's e-mail address (missing →
+`401 PORTAL_SIGN_IN`); `x-portal-name` their percent-encoded display name (missing → made from
+the address). The person is upserted in `users` as `portal:<e-mail>` on first sight.
 
 ### Dev sign-in (only when `AUTH_MODE=dev` and `APP_ENV != production`; otherwise `404`)
 
@@ -268,4 +281,6 @@ every door.
 6. **Board state is per user.** There is no endpoint that accepts another user's ID.
 7. **Locked luckor never expose content**, and locked pieces never expose images or alt texts.
 8. **Date simulation and dev sign-in cannot be enabled when `APP_ENV=production`**: the server
-   refuses to start.
+   refuses to start. Production runs in portal mode.
+9. **In portal mode no identity is taken from a request without the portal key**, and portal mode
+   never starts without a key of at least 32 characters, locally included.

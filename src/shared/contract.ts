@@ -12,6 +12,8 @@ const count = z.number().int().min(0);
 export const ERROR_CODES = [
   'VALIDATION_ERROR',
   'UNAUTHENTICATED',
+  // Portal mode only: the request did not carry a signed-in person (SPEC §8).
+  'PORTAL_SIGN_IN',
   'FORBIDDEN',
   'NOT_FOUND',
   'MISSION_LOCKED',
@@ -33,7 +35,9 @@ export const userSchema = z.object({
 });
 export type ApiUser = z.infer<typeof userSchema>;
 
-export const meResponse = z.object({ user: userSchema, authMode: z.enum(['dev']) });
+export const authMode = z.enum(['dev', 'portal']);
+export type AuthMode = z.infer<typeof authMode>;
+export const meResponse = z.object({ user: userSchema, authMode });
 export const devUsersResponse = z.object({ users: z.array(userSchema) });
 export const devLoginRequest = z.object({ userId: z.number().int().positive() });
 export const devLoginResponse = z.object({ user: userSchema });
@@ -128,7 +132,8 @@ export const boardPieceSchema = z.object({
   /** Jigsaw outline in 0–1 units of the piece box (SVG path for an objectBoundingBox clip). */
   shape: z.string(),
   /** Versioned image URL (changes whenever the image file changes). */
-  image: z.string().startsWith('/api/pieces/'),
+  // Under a base path the URL is e.g. /julkalender/api/pieces/…
+  image: z.string().includes('/api/pieces/'),
 });
 export type ApiBoardPiece = z.infer<typeof boardPieceSchema>;
 
