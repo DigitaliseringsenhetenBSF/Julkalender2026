@@ -108,6 +108,10 @@ export const sv = {
     saving: 'Sparar …',
     saveRetrying: 'Kunde inte spara – försöker igen …',
     complete: 'Pusslet är komplett! Tack alla för alla miljöuppdrag.',
+    celebrationTitle: 'Pusslet är klart!',
+    celebrationText: (n: number) =>
+      `Grattis – du har lagt alla ${n} bitar på rätt plats! Bilden blev till tack vare alla miljöuppdrag som Skolkontoret har gjort tillsammans.`,
+    celebrationClose: 'Stäng',
   },
 
   missions: {

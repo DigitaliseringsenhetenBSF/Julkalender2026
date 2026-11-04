@@ -14,12 +14,14 @@ import {
   type PiecePosition,
   type Slot,
   clampPosition,
+  correctSlot,
   nearestSlot,
   slotOrigin,
 } from '../../domain/board.ts';
 import type { ApiBoardPiece } from '../../shared/contract.ts';
 import { ApiCallError, api } from '../api.ts';
 import { sv } from '../texts.sv.ts';
+import { CompletionDialog } from './CompletionDialog.tsx';
 import { type PuzzleLayout, type Rect, fromPixels, toPixels } from './geometry.ts';
 import { usePieceSaver } from './usePieceSaver.ts';
 
@@ -72,6 +74,8 @@ export function Puzzle(props: PuzzleProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeSlot, setActiveSlot] = useState<Slot>({ row: 0, col: 0 });
   const [complete, setComplete] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
+  const completeRef = useRef(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const trayLeftRef = useRef<HTMLDivElement>(null);
@@ -90,6 +94,12 @@ export function Puzzle(props: PuzzleProps) {
   const saver = usePieceSaver({
     onSaved: (piece, isComplete) => {
       setPieces((prev) => prev.map((p) => (p.id === piece.id ? piece : p)));
+      // The last piece just fell into place: celebrate once, right here.
+      if (isComplete && !completeRef.current) {
+        setCelebrating(true);
+        propsRef.current.announce(sv.puzzle.celebrationTitle);
+      }
+      completeRef.current = isComplete;
       setComplete(isComplete);
     },
     onConflict: () => void loadBoard(),
@@ -111,6 +121,7 @@ export function Puzzle(props: PuzzleProps) {
         pad: response.pad,
         totalPieces: response.totalPieces,
       });
+      completeRef.current = response.complete;
       setComplete(response.complete);
       // Keep local positions for pieces with an unsaved move; the server wins otherwise.
       setPieces((prev) => {
@@ -368,7 +379,6 @@ export function Puzzle(props: PuzzleProps) {
         {sv.puzzle.keyboardHelp}
       </p>
 
-      {complete && <p className="banner banner--success">{sv.puzzle.complete}</p>}
       {pieces.length === 0 && <p className="banner">{sv.puzzle.empty(completionsPerPiece)}</p>}
 
       {/* Jigsaw outlines as clip paths: a piece only reacts where it is actually drawn. */}
@@ -384,7 +394,9 @@ export function Puzzle(props: PuzzleProps) {
 
       <div
         ref={containerRef}
-        className={`puzzle-area${selected ? ' puzzle-area--selecting' : ''}`}
+        className={`puzzle-area${selected ? ' puzzle-area--selecting' : ''}${
+          complete ? ' puzzle-area--complete' : ''
+        }`}
         style={{ '--columns': meta.grid.columns, '--rows': meta.grid.rows } as CSSProperties}
       >
         <div ref={trayLeftRef} className="tray" role="group" aria-label={sv.puzzle.trayLeft} />
@@ -423,7 +435,16 @@ export function Puzzle(props: PuzzleProps) {
           <div className="pieces-layer">
             {pieces.map((piece) => {
               const dragging = drag?.id === piece.id;
-              const position = dragging ? drag : toPixels(piece, layout);
+              // Once the puzzle is complete, close the small gaps of hand-laid pieces so the
+              // finished picture is seamless (no help while building – only the final reward).
+              const shown =
+                complete && piece.area === 'board'
+                  ? {
+                      area: 'board' as const,
+                      ...slotOrigin(correctSlot(piece.id, meta.grid), meta.grid),
+                    }
+                  : piece;
+              const position = dragging ? drag : toPixels(shown, layout);
               const classes = [
                 'piece',
                 dragging && 'piece--dragging',
@@ -483,6 +504,13 @@ export function Puzzle(props: PuzzleProps) {
           </div>
         )}
       </div>
+
+      {complete && <p className="banner banner--success puzzle__done">{sv.puzzle.complete}</p>}
+      <CompletionDialog
+        open={celebrating}
+        totalPieces={meta.totalPieces}
+        onClose={() => setCelebrating(false)}
+      />
 
       <p className="save-status" role="status">
         {saveText}

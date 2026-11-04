@@ -454,6 +454,69 @@ p {
   pointer-events: none;
 }
 
+/* The finished puzzle: a golden frame around the board and a seamless picture. */
+.puzzle-area--complete .board {
+  box-shadow:
+    0 0 0 4px var(--color-new),
+    0 0 28px rgb(217 165 59 / 0.55);
+  animation: board-glow 1.6s ease;
+}
+
+@keyframes board-glow {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-new);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 8px var(--color-new),
+      0 0 48px rgb(217 165 59 / 0.8);
+  }
+}
+
+.puzzle__done {
+  margin: var(--space-3) 0 0;
+}
+
+.celebration {
+  max-width: min(440px, calc(100vw - 32px));
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  border: 0;
+  border-top: 6px solid var(--color-new);
+  border-radius: var(--radius-l);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lift);
+  text-align: center;
+  animation: celebration-in 300ms ease;
+}
+
+.celebration::backdrop {
+  background: rgb(16 40 30 / 0.55);
+}
+
+.celebration__icon {
+  margin: 0 0 var(--space-2);
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.celebration h2 {
+  font-size: 1.6rem;
+}
+
+@keyframes celebration-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .save-status {
   min-height: 1.5em;
   margin: var(--space-2) 0 0;

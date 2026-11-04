@@ -137,8 +137,16 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
 - Pieces are **monotonic**: un-ticks never lower the high-water mark.
 - "Uppdrag kvar till nästa pusselbit" = `(unlocked + 1) × completionsPerPiece − total`. This can
   exceed the threshold after un-ticks. It is `0` once all pieces are unlocked.
-- **End state:** all 45 unlocked → "Pusslet är komplett!" (shown once the user has also placed
-  them all). Further completions are still recorded and counted, without errors.
+- **End state:** All 45 pieces are unlocked, and the user has laid each one within
+  `correctTolerance` of its slot.
+  - **The moment the last piece lands:** a modal dialog "Pusslet är klart!" opens. It takes
+    focus, is announced, and closes with Escape or "Stäng".
+  - **On the board:** it gets a golden frame, and the pieces are drawn exactly in their slots,
+    so the hand-laid gaps close and the finished picture is seamless.
+  - **Afterwards:** a lasting "Pusslet är komplett!" banner shows below the board, and the
+    dialog is not shown again on later visits.
+  - **Moving a piece out again** undoes the complete state.
+  - **Further completions** are still recorded and counted, without errors.
 
 ### 5.4 Deterministic unlock order
 

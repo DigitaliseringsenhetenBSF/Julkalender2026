@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { correctSlot, piece, resetDatabase, signIn } from './helpers.ts';
 
@@ -109,10 +110,28 @@ test('laying all pieces through the UI completes the puzzle', async ({ page }) =
     const cell = page.getByRole('button', { name: `Rad ${slot.row + 1}, kolumn ${slot.col + 1}` });
     await cell.focus();
     await page.keyboard.press('Enter');
-    await expect(piece(page, id)).toBeFocused();
+    // (After the last piece the celebration dialog takes focus instead.)
+    if (id < TOTAL) await expect(piece(page, id)).toBeFocused();
   }
 
+  // The moment the last piece is in place: a dialog that takes focus, then a lasting banner.
+  const dialog = page.getByRole('dialog', { name: 'Pusslet är klart!' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Stäng' })).toBeFocused();
+  await expect(dialog).toContainText(`alla ${TOTAL} bitar`);
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(
+    axe.violations
+      .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+      .map((v) => v.id),
+  ).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
   await expect(page.getByText('Pusslet är komplett!', { exact: false })).toBeVisible();
+  await expect(page.locator('.puzzle-area--complete')).toHaveCount(1);
+
+  // Coming back later: the banner stays, the dialog does not pop up again.
   await page.reload();
   await expect(page.getByText('Pusslet är komplett!', { exact: false })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });

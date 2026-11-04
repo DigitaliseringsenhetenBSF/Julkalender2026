@@ -100,6 +100,12 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
   - an e2e test checks every piece against the source image and lays the whole puzzle through
     the UI.
 
+- [x] **Clear confirmation when the puzzle is finished.** AC:
+  - a dialog "Pusslet är klart!" with focus opens the moment the last piece is in place;
+  - the board gets a golden frame and closes the gaps between pieces;
+  - the banner below the board stays;
+  - covered by e2e, including axe with the dialog open.
+
 ## Later phases (need decisions or material)
 
 - [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in
