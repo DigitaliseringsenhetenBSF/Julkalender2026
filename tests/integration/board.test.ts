@@ -67,6 +67,8 @@ describe('GET /api/board', () => {
       expect(piece.isNew).toBe(true);
       expect(piece.alt.length).toBeGreaterThan(0);
       expect(piece.shape).toMatch(/^M .* Z$/);
+      // Versioned by the file's content, so a cached old image can never be shown.
+      expect(piece.image).toMatch(new RegExp(`^/api/pieces/${piece.id}/image\\?v=[0-9a-f]{12}$`));
     }
     // Balanced: one per tray.
     expect(new Set(first.pieces.map((p) => p.area)).size).toBe(2);

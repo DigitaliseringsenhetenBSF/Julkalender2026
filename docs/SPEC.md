@@ -188,6 +188,12 @@ All values live in `content/campaign.json` and `content/puzzle.json`. They are n
 - Piece images are served only via `GET /api/pieces/:id/image`, and only once that piece is
   collectively unlocked (otherwise `404`).
 - The whole source image (`assets/puzzle/source/`) is never served.
+- Piece image URLs carry a hash of the image file (`?v=…`). The images can then be cached
+  "forever" without the risk of a browser showing a stale piece after a re-cut. This happened
+  once, on 2026-11-04, when old 24-piece images were shown in the new shapes.
+- **Buildability is tested** (`tests/e2e/puzzle-build.spec.ts`):
+  - every served piece best matches its own cell of the source image;
+  - laying all 45 pieces through the UI shows "Pusslet är komplett!".
 - Locked pieces' alt texts are never sent.
 
 ## 6. Statistics (definitions)

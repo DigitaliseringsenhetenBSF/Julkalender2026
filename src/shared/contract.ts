@@ -127,6 +127,8 @@ export const boardPieceSchema = z.object({
   alt: z.string(),
   /** Jigsaw outline in 0–1 units of the piece box (SVG path for an objectBoundingBox clip). */
   shape: z.string(),
+  /** Versioned image URL (changes whenever the image file changes). */
+  image: z.string().startsWith('/api/pieces/'),
 });
 export type ApiBoardPiece = z.infer<typeof boardPieceSchema>;
 

@@ -6,7 +6,7 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastif
 import { ICONS_DIR, WEB_DIST_DIR } from '../data/paths.ts';
 import { devAuthRoutes } from './auth/devAuth.ts';
 import { requireUser } from './auth/session.ts';
-import { resetDatabase } from './bootstrap.ts';
+import { resetDatabase, unlockAllPieces } from './bootstrap.ts';
 import type { AppContext } from './context.ts';
 import { ApiError, sendError } from './errors.ts';
 import { boardRoutes } from './routes/board.ts';
@@ -84,6 +84,10 @@ export async function buildApp(
   if (ctx.config.appEnv === 'test') {
     app.post('/api/test/reset', async (_request, reply) => {
       await resetDatabase(ctx);
+      return reply.status(204).send();
+    });
+    app.post('/api/test/unlock-all', async (_request, reply) => {
+      await unlockAllPieces(ctx);
       return reply.status(204).send();
     });
   }

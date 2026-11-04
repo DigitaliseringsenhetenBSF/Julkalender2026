@@ -70,5 +70,4 @@ export const api = {
   board: () => request(boardResponse, 'GET', '/api/board'),
   movePiece: (id: number, body: MovePieceRequest) =>
     request(movePieceResponse, 'PUT', `/api/board/pieces/${id}`, body),
-  pieceImageUrl: (id: number) => `/api/pieces/${id}/image`,
 };

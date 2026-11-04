@@ -1,4 +1,5 @@
-import { createReadStream } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { createReadStream, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { resolveDrop } from '../../domain/board.ts';
@@ -18,10 +19,22 @@ export async function boardRoutes(app: FastifyInstance, ctx: AppContext): Promis
   const { puzzle } = ctx.content;
   const grid = { columns: puzzle.columns, rows: puzzle.rows };
   const shapeById = new Map(puzzle.pieces.map((p) => [p.id, p.shape]));
-  // Shapes only travel with pieces that are on the user's board, i.e. already unlocked.
+  // Images are cached "forever", so their URL carries a hash of the file: a re-cut puzzle gets
+  // new URLs and a browser can never show an old piece in a new shape.
+  const imageUrlById = new Map(
+    puzzle.pieces.map((p) => {
+      const hash = createHash('sha256')
+        .update(readFileSync(join(PIECES_DIR, basename(p.file))))
+        .digest('hex')
+        .slice(0, 12);
+      return [p.id, `/api/pieces/${p.id}/image?v=${hash}`];
+    }),
+  );
+  // Shapes and image URLs only travel with pieces on the user's board, i.e. already unlocked.
   const withShape = (piece: BoardPiece): ApiBoardPiece => ({
     ...piece,
     shape: shapeById.get(piece.id) ?? '',
+    image: imageUrlById.get(piece.id) ?? '',
   });
 
   // Always the caller's own board: the user id comes from the session, never the request.

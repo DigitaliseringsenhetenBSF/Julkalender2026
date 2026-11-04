@@ -466,7 +466,7 @@ export function Puzzle(props: PuzzleProps) {
                     onClick={() => onPieceClick(piece)}
                     onKeyDown={(event) => onPieceKeyDown(event, piece)}
                   >
-                    <img src={api.pieceImageUrl(piece.id)} alt="" draggable={false} />
+                    <img src={piece.image} alt="" draggable={false} />
                   </button>
                   {piece.isNew && (
                     <span

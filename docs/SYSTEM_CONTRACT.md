@@ -195,7 +195,8 @@ positions first.
       "z": 3,
       "isNew": true,
       "alt": "Solnedgång bakom granarna",
-      "shape": "M 0.2655 0.2635 L 0.3949 0.2635 C … Z"
+      "shape": "M 0.2655 0.2635 L 0.3949 0.2635 C … Z",
+      "image": "/api/pieces/7/image?v=3f9c2a71b0de"
     }
   ],
   "complete": false,
@@ -209,6 +210,8 @@ positions first.
   extends `pad` (a share of a cell) beyond its cell on every side for the tabs.
 - `shape` is the jigsaw outline as an SVG path in 0–1 units of the piece box. It is meant for
   `clipPathUnits="objectBoundingBox"`.
+- `image` is the piece's image URL. The `v` parameter is a hash of the image file, so a re-cut
+  puzzle gets new URLs and a browser can never show a cached old image.
 - No per-piece "correct" flag is sent (no hints, SPEC §5.5).
 - `complete` is `true` when every piece is unlocked and lies in its place on this board.
 - `isNew` marks a piece the user has not moved yet (the "Ny" badge).
@@ -249,6 +252,10 @@ every door.
 ### Test only: `POST /api/test/reset` (registered only when `APP_ENV=test`)
 
 `204`. Resets the database to seed and demo state for e2e tests.
+
+### Test only: `POST /api/test/unlock-all` (registered only when `APP_ENV=test`)
+
+`204`. Unlocks every piece and adds "Pusseltestare (alla bitar)" (e2e: the puzzle can be built).
 
 ## Invariants
 

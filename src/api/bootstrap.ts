@@ -2,7 +2,7 @@ import { localDateInZone, openMissionCount, type CalendarConfig } from '../domai
 import type { Content } from '../data/content.ts';
 import type { Db } from '../data/db.ts';
 import { migrate } from '../data/migrate.ts';
-import { pieceRules, seedBase, seedDemo } from '../data/seed.ts';
+import { pieceRules, seedAllPieces, seedBase, seedDemo } from '../data/seed.ts';
 import type { Clock } from './clock.ts';
 import type { AppConfig } from './config.ts';
 import type { AppContext } from './context.ts';
@@ -51,4 +51,10 @@ export async function resetDatabase(ctx: AppContext): Promise<void> {
     UPDATE campaign_state SET unlocked_pieces = 0, updated_at = now() WHERE id = 1;
   `);
   await prepareDatabase(ctx);
+}
+
+/** Test-only: unlock every piece and add the puzzle tester (used by e2e tests). */
+export async function unlockAllPieces(ctx: AppContext): Promise<void> {
+  const today = localDateInZone(ctx.clock.now(), ctx.calendar.timezone);
+  await seedAllPieces(ctx.db, ctx.content, openMissionCount(today, ctx.calendar));
 }

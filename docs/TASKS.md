@@ -94,6 +94,12 @@ Status: `[x]` done · `[ ]` open · `[~]` in progress. Each task has acceptance 
 - [x] **`npm run db:seed:all-pieces`** (dev only): unlocks all 45 pieces and adds the test user
       "Pusseltestare (alla bitar)" with every piece in the trays.
 
+- [x] **Puzzle buildability guaranteed:**
+  - image URLs are versioned by content hash (a stale browser cache showed old 24-piece images
+    in the new shapes);
+  - an e2e test checks every piece against the source image and lays the whole puzzle through
+    the UI.
+
 ## Later phases (need decisions or material)
 
 - [ ] **Real sign-in** (Q1). Entra ID app registration with IT, or magic links. Remove dev mode in
