@@ -41,7 +41,9 @@ describe('GET /api/calendar', () => {
       icon: 'lucka-01.svg',
     });
     expect(calendar.missions[0]?.howTo).toMatch(/^Dela ett smart vardagsknep/);
-    expect(calendar.missions[0]?.ifYouWant).toBe('Skriv ditt tips i tråden.');
+    expect(calendar.missions[0]?.ifYouWant).toBe(
+      'Skriv ditt tips i julkalenderns tråd i Skolkontorets Teams-chatt.',
+    );
     expect(calendar.missions[9]).toMatchObject({ day: 10, status: 'today' });
     // Locked: texts hidden, only the decorative icon is sent.
     expect(calendar.missions[10]).toMatchObject({
